@@ -16,29 +16,33 @@ START:                  ; first instruction of program
 LOOP    LEA     INPUT_MSG_START,A1
         MOVE.B  #14,D0
         TRAP    #15
-    
+        
         *Get the starting address
         MOVE.B  #4,D0
         TRAP    #15
+        
+        CMP.L   #-1,D1  *If -1 then exit
+        BEQ     DONE    
+        
         CMP.L   #0,D1
         BLE     DISPLAY_NEG_ERR
         BGE     GET_END_ADDR
-    
+        
 *Display the one end address is smaller than start address error    
 DISPLAY_ERR 
-        LEA     NOT_VALID_ERR
+        LEA     NOT_VALID_ERR,A1
         MOVE.B  #14,D0
         TRAP    #15 
-        BRA     LOOP
+        BRA     LOOP        
 
 DISPLAY_NEG_ERR
-        LEA     NEG_ADDR
+        LEA     NEG_ADDR,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     LOOP    
 
 DISPLAY_NEG_END_ERR
-        LEA     NEG_ADDR
+        LEA     NEG_ADDR,A1
         MOVE.B  #14,D0
         TRAP    #15
         BRA     GET_END_ADDR
@@ -53,6 +57,10 @@ GET_END_ADDR
         *Get the ending address
         MOVE.B  #4,D0
         TRAP    #15
+        
+        CMP.L   #-1,D1  *If -1 then exit
+        BEQ     DONE 
+        
         CMP.L   #0,D1
         BLE     DISPLAY_NEG_END_ERR
         BGE     COMPARE_FUNC
@@ -69,12 +77,13 @@ DONE
 
 * Put variables and constants here
 NEG_ADDR            DC.B    'Address must be positive',CR,LF,0
-INPUT_MSG_START     DC.B    'Please type the starting address',CR,LF,0
-INPUT_MSG_END       DC.B    'Please type the ending address',CR,LF,0
+INPUT_MSG_START     DC.B    'Please type the starting address: ',CR,LF,0
+INPUT_MSG_END       DC.B    'Please type the ending address: ',CR,LF,0
 NOT_VALID_ERR       DC.B    'Starting address is larger or equal to ending address',CR,LF,0
 
     END    START        ; last line of source
    
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
