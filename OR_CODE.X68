@@ -2,7 +2,7 @@
 * Title      : OR
 * Written by : Brad Minogue
 * Date       :
-* Description: decodes move
+* Description: decodes OR
 *-----------------------------------------------------------
     ORG    $1000
 START:                  
