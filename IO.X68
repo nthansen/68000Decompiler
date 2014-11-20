@@ -1,8 +1,9 @@
 *-----------------------------------------------------------
 * Title      :
-* Written by :
-* Date       :
-* Description:
+* Written by : Konstantin Stekhov
+* Date       : 11/20/2014
+* Description: Gets input starting address and ending address
+*              and loops thorough those
 *-----------------------------------------------------------
 CR  EQU $0D
 LF  EQU $0A  
@@ -91,6 +92,7 @@ NOT_VALID_ERR       DC.B    'Starting address is larger or equal to ending addre
 
     END    START        ; last line of source
    
+
 
 
 *~Font name~Courier New~
