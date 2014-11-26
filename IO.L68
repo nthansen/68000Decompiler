@@ -1,0 +1,120 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.02
+Created On: 11/20/2014 2:43:06 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000  =0000000D                  7  CR  EQU $0D
+00000000  =0000000A                  8  LF  EQU $0A  
+00000000  =00000001                  9  BYTE    EQU     $1  
+00000000                            10      
+00001000                            11      ORG    $1000
+00001000                            12  START:                  ; first instruction of program
+00001000                            13  
+00001000                            14  * Put program code here
+00001000                            15      
+00001000                            16      *Ask for the input message
+00001000  43F9 000010B9             17  LOOP    LEA     INPUT_MSG_START,A1
+00001006  103C 000E                 18          MOVE.B  #14,D0
+0000100A  4E4F                      19          TRAP    #15
+0000100C                            20          
+0000100C                            21          *Get the starting address
+0000100C  103C 0004                 22          MOVE.B  #4,D0
+00001010  4E4F                      23          TRAP    #15
+00001012                            24          
+00001012  B2BC FFFFFFFF             25          CMP.L   #-1,D1  *If -1 then exit
+00001018  6700 007E                 26          BEQ     DONE    
+0000101C                            27          
+0000101C  B2BC 00000000             28          CMP.L   #0,D1
+00001022  6F00 0014                 29          BLE     DISPLAY_NEG_ERR
+00001026  6C00 002E                 30          BGE     GET_END_ADDR
+0000102A                            31          
+0000102A                            32  *Display the one end address is smaller than start address error    
+0000102A                            33  DISPLAY_ERR 
+0000102A  43F9 00001101             34          LEA     NOT_VALID_ERR,A1
+00001030  103C 000E                 35          MOVE.B  #14,D0
+00001034  4E4F                      36          TRAP    #15 
+00001036  60C8                      37          BRA     LOOP        
+00001038                            38  
+00001038                            39  DISPLAY_NEG_ERR
+00001038  43F9 0000109E             40          LEA     NEG_ADDR,A1
+0000103E  103C 000E                 41          MOVE.B  #14,D0
+00001042  4E4F                      42          TRAP    #15
+00001044  60BA                      43          BRA     LOOP    
+00001046                            44  
+00001046                            45  DISPLAY_NEG_END_ERR
+00001046  43F9 0000109E             46          LEA     NEG_ADDR,A1
+0000104C  103C 000E                 47          MOVE.B  #14,D0
+00001050  4E4F                      48          TRAP    #15
+00001052  6000 0002                 49          BRA     GET_END_ADDR
+00001056                            50  
+00001056                            51  GET_END_ADDR
+00001056  2441                      52          MOVE.L  D1,A2               *Starting address in A2
+00001058                            53          *Ask for the input message
+00001058  43F9 000010DE             54          LEA     INPUT_MSG_END,A1
+0000105E  103C 000E                 55          MOVE.B  #14,D0
+00001062  4E4F                      56          TRAP    #15
+00001064                            57      
+00001064                            58          *Get the ending address
+00001064  103C 0004                 59          MOVE.B  #4,D0
+00001068  4E4F                      60          TRAP    #15
+0000106A                            61          
+0000106A  B2BC FFFFFFFF             62          CMP.L   #-1,D1  *If -1 then exit
+00001070  6700 0026                 63          BEQ     DONE 
+00001074                            64          
+00001074  B2BC 00000000             65          CMP.L   #0,D1
+0000107A  6FCA                      66          BLE     DISPLAY_NEG_END_ERR
+0000107C  6C00 0002                 67          BGE     COMPARE_FUNC
+00001080                            68  
+00001080                            69  COMPARE_FUNC
+00001080  2641                      70          MOVE.L  D1,A3               *Ending address in A3
+00001082  B5CB                      71          CMP.L   A3,A2               *Compare D3 and D4 if D3 is greater or
+00001084  6CA4                      72          BGE     DISPLAY_ERR         *equal then throw an error   
+00001086  6F00 0006                 73          BLE     DATA_LOOP
+0000108A  6000 FF74                 74          BRA     LOOP
+0000108E                            75  
+0000108E                            76  DATA_LOOP
+0000108E  528A                      77          ADD.L  #BYTE,A2
+00001090  B7CA                      78          CMP.L   A2,A3
+00001092  6700 0004                 79          BEQ     DONE
+00001096  60F6                      80          BRA     DATA_LOOP
+00001098                            81          
+00001098                            82  DONE
+00001098  103C 0009                 83          MOVE.B  #9,D0
+0000109C  4E4F                      84          TRAP    #15                 ; halt simulator
+0000109E                            85  
+0000109E                            86  * Put variables and constants here
+0000109E= 41 64 64 72 65 73 ...     87  NEG_ADDR            DC.B    'Address must be positive',CR,LF,0
+000010B9= 50 6C 65 61 73 65 ...     88  INPUT_MSG_START     DC.B    'Please type the starting address: ',CR,LF,0
+000010DE= 50 6C 65 61 73 65 ...     89  INPUT_MSG_END       DC.B    'Please type the ending address: ',CR,LF,0
+00001101= 53 74 61 72 74 69 ...     90  NOT_VALID_ERR       DC.B    'Starting address is larger or equal to ending address',CR,LF,0
+00001139                            91  
+00001139                            92      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+BYTE                1
+COMPARE_FUNC        1080
+CR                  D
+DATA_LOOP           108E
+DISPLAY_ERR         102A
+DISPLAY_NEG_END_ERR  1046
+DISPLAY_NEG_ERR     1038
+DONE                1098
+GET_END_ADDR        1056
+INPUT_MSG_END       10DE
+INPUT_MSG_START     10B9
+LF                  A
+LOOP                1000
+NEG_ADDR            109E
+NOT_VALID_ERR       1101
+START               1000

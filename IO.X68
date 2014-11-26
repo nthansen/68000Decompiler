@@ -1,11 +1,13 @@
 *-----------------------------------------------------------
 * Title      :
-* Written by :
-* Date       :
-* Description:
+* Written by : Konstantin Stekhov
+* Date       : 11/20/2014
+* Description: Gets input starting address and ending address
+*              and loops thorough those
 *-----------------------------------------------------------
 CR  EQU $0D
-LF  EQU $0A    
+LF  EQU $0A  
+BYTE    EQU     $1  
     
     ORG    $1000
 START:                  ; first instruction of program
@@ -48,7 +50,7 @@ DISPLAY_NEG_END_ERR
         BRA     GET_END_ADDR
 
 GET_END_ADDR
-        MOVE.L  D1,D3               *Starting address in D3
+        MOVE.L  D1,A2               *Starting address in A2
         *Ask for the input message
         LEA     INPUT_MSG_END,A1
         MOVE.B  #14,D0
@@ -66,10 +68,17 @@ GET_END_ADDR
         BGE     COMPARE_FUNC
 
 COMPARE_FUNC
-        MOVE.L  D1,D4               *Ending address in D4
-        CMP.L   D3,D4               *Compare D3 and D4 if D3 is greater or
+        MOVE.L  D1,A3               *Ending address in A3
+        CMP.L   A3,A2               *Compare D3 and D4 if D3 is greater or
         BGE     DISPLAY_ERR         *equal then throw an error   
+        BLE     DATA_LOOP
         BRA     LOOP
+
+DATA_LOOP
+        ADD.L  #BYTE,A2
+        CMP.L   A2,A3
+        BEQ     DONE
+        BRA     DATA_LOOP
         
 DONE
         MOVE.B  #9,D0
@@ -83,6 +92,8 @@ NOT_VALID_ERR       DC.B    'Starting address is larger or equal to ending addre
 
     END    START        ; last line of source
    
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
