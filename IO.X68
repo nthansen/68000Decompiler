@@ -139,8 +139,12 @@ CHECK_IF_EVEN
         BEQ     ODD_INPUT
 
 CONVERT_HEX_TO_ASCII
+        ANDI.L  #$000000FF,D1
+        CMP.B   #4,D1             *If size is greater than 4
+        BGT     DISPLAY_BYTE_ERR  *then display incorrect byte size error
+        CMP.B   #0,D1             *If size is less or equal to 0
+        BLE     DISPLAY_BYTE_ERR  *do the same
         
-
 WRONG_INPUT
         LEA     INPUT_ERR,A1
         MOVE.B  #14,D0
@@ -150,7 +154,11 @@ ODD_INPUT
         LEA     ODD_ERR,A1
         MOVE.B  #14,D0
         TRAP    #15
-        
+
+DISPLAY_BYTE_ERR
+        LEA     BYTE_ERR,A1
+        MOVE    #14,D0
+        TRAP    #15
 
 * Put variables and constants here
 NEG_ADDR            DC.B    'Address must be positive',CR,LF,0
@@ -158,6 +166,7 @@ INPUT_ERR           DC.B    'The input is wrong',CR,LF,0
 INPUT_MSG_START     DC.B    'Please type the starting address: ',CR,LF,0
 INPUT_MSG_END       DC.B    'Please type the ending address: ',CR,LF,0
 NOT_VALID_ERR       DC.B    'Starting address is larger or equal to ending address',CR,LF,0
+BYTE_ERR            DC.B    'Incorrect byte size',CR,LF,0
 START_ADDR          DS.B    80
 END_ADDR            DS.B    80
     
