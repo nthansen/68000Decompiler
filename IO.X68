@@ -5,23 +5,22 @@
 * Description: Gets input starting address and ending address
 *              and loops thorough those
 *-----------------------------------------------------------
-CR  EQU $0D
-LF  EQU $0A  
-BYTE    EQU     $1  
+CR      EQU $0D
+LF      EQU $0A  
+BYTE    EQU $1
+STACK   EQU $7000               * Stack address
+    
     
     ORG    $1000
 START:                  ; first instruction of program
+        LEA     STACK, SP  *Get the stak pointer
 
-* Put program code here
     
     *Ask for the input message
-LOOP    LEA     INPUT_MSG_START,A1
-        MOVE.B  #14,D0
-        TRAP    #15
+LOOP    
         
         *Get the starting address
-        MOVE.B  #4,D0
-        TRAP    #15
+        
         
         CMP.L   #-1,D1  *If -1 then exit
         BEQ     DONE    
@@ -83,15 +82,89 @@ DATA_LOOP
 DONE
         MOVE.B  #9,D0
         TRAP    #15                 ; halt simulator
+        
+*/////////////////////SUBROUTINES
+CONVERT_ONE_CHAR_TO_HEX
+        MOVE.B  (A1)+, D2   *Get character in D2
+        CMP.B   #0, D2      *Compare it to null
+        BEQ     STRING_END
+        CMP.B   #70, D2     *If greater than higest upercase      
+        BGT     WRONG_INPUT
+        CMP.B   #64, D2     *If greater than lowest upercase
+        BGT     UPPER_HEX
+        CMP.B   #96, D2     *If greater than lowest lowercase
+        BGT     WRONG_INPUT
+        CMP.B   #102,D2     *If greater than highest character
+        BGT     WRONG_INPUT
+        CMP.B   #57, D2     *If greater than highest decimal
+        BGT     WRONG_INPUT
+        CMP.B   #48, D2     *If lower than lowest decimal
+        BLT     WRONG_INPUT 
+        SUBI.B  #48, D2     *Get hex value
+        ASL.L   #4, D3
+        ADD.B   D2, D3      *Move the result into D3
+        BRA     CONVERT_ONE_CHAR_TO_HEX *Go to the next one
+
+UPPER_HEX
+        SUBI.B  #55,D2      *Get hex value
+         
+STRING_END
+        RTS        
+
+VALIDATE
+        MOVEQ   #$0,D3
+        CMP.B   D3,D1
+        BLE     DISPLAY_NEG_ERR
+        CMPI    #$8,D1
+        BGT     WRONG_INPUT
+        
+GET_START_ADDR
+        LEA     INPUT_MSG_START,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
+        LEA     START_ADDR,A1
+        MOVE.B  #4,D0           *The starting address input in D1
+        TRAP    #15
+
+        JSR     VALIDATE              
+
+CHECK_IF_EVEN
+        CLR.L   D2              *Clear old value in D2
+        MOVE.L  #$00000002,D1   *Put 2 in D1
+        MOVE.L  D3,D2
+        DIVU    D1,D2           *Divide
+        SWAP    D2
+        CMP.B   #$01,D2         *If there is a remainder then display error
+        BEQ     ODD_INPUT
+
+CONVERT_HEX_TO_ASCII
+        
+
+WRONG_INPUT
+        LEA     INPUT_ERR,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+
+ODD_INPUT
+        LEA     ODD_ERR,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        
 
 * Put variables and constants here
 NEG_ADDR            DC.B    'Address must be positive',CR,LF,0
+INPUT_ERR           DC.B    'The input is wrong',CR,LF,0
 INPUT_MSG_START     DC.B    'Please type the starting address: ',CR,LF,0
 INPUT_MSG_END       DC.B    'Please type the ending address: ',CR,LF,0
 NOT_VALID_ERR       DC.B    'Starting address is larger or equal to ending address',CR,LF,0
-
+START_ADDR          DS.B    80
+END_ADDR            DS.B    80
+    
     END    START        ; last line of source
    
+
+
 
 
 
