@@ -13,21 +13,15 @@ MAn      EQU     %001    * An
 MAnP     EQU     %010    * (An)
 MAnPlus  EQU     %011    * (An)+
 MAnMin   EQU     %100    * -(An)
-Md16An   EQU     %101    * (d16,An)
-Md8AnXn  EQU     %110    * (d8,An,Xn)
 MxxxW    EQU     %111    * (xxx).W
 MxxxL    EQU     %111    * (xxx).L
 MdAdd    EQU     %111    * #<data>
-Md16PC   EQU     %111    * (d16,PC)
-Md8PCXn  EQU     %111    * (d8,PC,Xn)
 
 * REGISTER
 
 RxxxW    EQU     %000    * (xxx).W
 RxxxL    EQU     %001    * (xxx).L
 RdAdd    EQU     %100    * #<data>
-Rd16PC   EQU     %010    * (d16,PC)
-Rd8PCXn  EQU     %011    * (d8,PC,Xn)
 
 START:                  ; first instruction of program
 
@@ -40,56 +34,62 @@ GETREG:
     LSR #8,D1                   ; Put back into place
     LSR #5,D1                   ; Remove excess so now it's 0001
   
-EA_AnP
-    LEA AnP_TEXT,A1
+PRINT_EA_DRD
+    LEA DRD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
 
-EA_D16An
-    LEA D16An_TEXT,A1
+PRINT_EA_ARD
+    LEA ARD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
     
-EA_D8AnXn
-    LEA D8AnXn_TEXT,A1
+PRINT_EA_ARI
+    LEA ARI_TEXT,A1
     MOVE.B  #14,D0
     TRAP #15
     
-EA_XXXXW
-    LEA xxxxW_TEXT,A1
+PRINT_EA_ARIP
+    LEA ARIP_TEXT,A1
     MOVE.B  #14,D0
     TRAP #15
     
-EA_XXXXL
-    LEA xxxxL_TEXT,A1
+PRINT_EA_ARIM
+    LEA ARIM_TEXT,A1
     MOVE.B  #14,D0
     TRAP #15
     
-EA_D16PC
-    LEA D16PC_TEXT,A1
+PRINT_EA_ID
+    LEA ID_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
     
-EA_D8PCXn_TEXT
-    LEA D8PCXn_TEXT,A1
+PRINT_EA_ALA
+    LEA ALA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
 
+PRINT_EA_AWA
+    LEA AWA_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     
     SIMHALT             ; halt simulator
 
 * Put variables and constants here
 EA_TEXT DC.B ' EA',0
-AnP_TEXT DC.B ' (An)',0
-D16An_TEXT DC.B ' (d16,An)',0
-D8AnXn_TEXT DC.B ' (d8,An,Xn)',0
-xxxxW_TEXT DC.B ' (xxxx).W',0
-xxxxL_TEXT DC.B ' (xxxx).L',0
-D16PC_TEXT DC.B ' (d16,PC)',0
-D8PCXn_TEXT DC.B ' (d8,PC,Xn)',0
+DRD_TEXT DC.B ' Dn ', 0
+ARD_TEXT DC.B ' An ',0
+ARI_TEXT DC.B ' (An)',0
+ARIP_TEXT DC.B ' (An)+ ',0
+ARIM_TEXT DC.B ' -(SP) ',0
+ID_TEXT DC.B ' # ',0
+ALA_TEXT DC.B ' (xxxx).W',0
+AWA_TEXT DC.B ' (xxxx).L',0
 
 
     END    START        ; last line of source
+
 
 
 
