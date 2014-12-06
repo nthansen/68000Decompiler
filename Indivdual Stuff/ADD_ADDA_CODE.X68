@@ -3,7 +3,8 @@
 * Written by :  Brad Minogue
 * Date       :  12/5/14
 * Description:  Add and ADDa decoding, they share op code
-*so they need to be decoded toegher 
+*so they need to be decoded toegher
+*latter modified to work with both sub as well 
 *-----------------------------------------------------------
     ORG    $1000
 START:
@@ -12,12 +13,22 @@ START:
     ;determine if we are a type of add
     AND.L (ADD_VALUE),D1
     CMP.L ADD_VALUE,D1
-    BNE END_SEG                 ;if not end this
+    BNE SUB_SEG                 ;if not end this
     ;print out add both types of add will use this
     LEA ADD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    ;this is how we are going to check for which add we are
+    BRA NEXT_SEG
+SUB_SEG MOVE.L D2,D1                ;copy it
+    ;determine if we are a type of SUB
+    AND.L (SUB_VALUE),D1    
+    CMP.L SUB_VALUE,D1
+    BNE END_SEG
+    LEA SUB_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
+    BRA NEXT_SEG
+NEXT_SEG    ;this is how we are going to check for which add we are
     MOVE.L D2,D1                ;by looking at the size we can
     LSL #7,D1                   ;tell if we are ADDA or ADD
     LSR #7,D1                   ;and which form of ADD we are
@@ -148,7 +159,9 @@ ADD_V2
     TRAP #15
     BRA END_SEG
 END_SEG    SIMHALT
-SAMPLE_INPUT DC.L $DBC1
+SUB_VALUE DC.L $9000
+SUB_TEXT DC.B 'SUB',0
+SAMPLE_INPUT DC.L $9BC1
 ADD_VALUE DC.L $D000
 ADD_TEXT DC.B 'ADD',0
 ADD_ADDR_TEXT DC.B 'A',0
@@ -170,6 +183,7 @@ EA_TEXT DC.B 'EA',0
 COMMA_TEXT DC.B ',',0
     END    START        ; last line of source
     
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
