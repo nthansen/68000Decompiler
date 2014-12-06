@@ -3,7 +3,7 @@
 * Written by :  Brad Minogue
 * Date       :  12/5/14
 * Description:  Add and ADDa decoding, they share op code
-*so they need to be decoded toegher
+*so they need to be decoded toegher 
 *-----------------------------------------------------------
     ORG    $1000
 START:
