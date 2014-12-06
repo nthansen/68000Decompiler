@@ -8,32 +8,52 @@
 *FOR ADDA, MIGHT NOT BE THE SAME FOR ALL
 * MODE
 
-MDn      EQU     %000    * Dn
-MAn      EQU     %001    * An
-MAnP     EQU     %010    * (An)
-MAnPlus  EQU     %011    * (An)+
-MAnMin   EQU     %100    * -(An)
-MxxxW    EQU     %111    * (xxx).W
-MxxxL    EQU     %111    * (xxx).L
-MdAdd    EQU     %111    * #<data>
+MDRD      EQU     %000    *  Dn
+MARD      EQU     %001    *  An
+MARI      EQU     %010    * (An)
+MARIP     EQU     %011    * (An)+
+MARIM     EQU     %100    * -(An)
+MAWA      EQU     %111    * (xxx).W
+MALA      EQU     %111    * (xxx).L
+MID       EQU     %111    * #<data>
 
 * REGISTER
 
-RxxxW    EQU     %000    * (xxx).W
-RxxxL    EQU     %001    * (xxx).L
-RdAdd    EQU     %100    * #<data>
+RAWA      EQU     %000    * (xxx).W
+RALA      EQU     %001    * (xxx).L
+RID       EQU     %100    * #<data>
 
 START:                  ; first instruction of program
 
 * Put program code here
 
+GETMODE:    
+    MOVE.L D2,D1                ; this is for detecting the mode starts as 1001 0001 WANT 010
+    LSL #8,D1                   ; Remove starting address
+    LSL #1,D1                   ; Remove offset so then it's 0010 0010
+    LSR #8,D1                   ; Put back into place
+    LSR #4,D1                   ; Remove register so now it's 0010
+    
 GETREG:
     MOVE.L D2,D1                ; this is for detecting the register starts as 1001 0001 WANT 001
     LSL #8,D1                   ; Remove starting address
     LSL #5,D1                   ; Remove offset so then it's 0010 0010
     LSR #8,D1                   ; Put back into place
     LSR #5,D1                   ; Remove excess so now it's 0001
-  
+    *BRA END_SEG
+    
+GETREGW:
+    MOVE.W  (A6)+,D1
+    MOVE.B  #15,D0
+    MOVE.B  #16,D2
+    TRAP    #15    
+
+GETREGL
+    MOVE.L  (A6)+,D1
+    MOVE.B  #15,D0
+    MOVE.B  #16,D2
+    TRAP    #15 
+    
 PRINT_EA_DRD
     LEA DRD_TEXT,A1
     MOVE.B #14,D0
@@ -89,6 +109,8 @@ AWA_TEXT DC.B ' (xxxx).L',0
 
 
     END    START        ; last line of source
+
+
 
 
 
