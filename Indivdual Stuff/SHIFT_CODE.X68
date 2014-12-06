@@ -15,7 +15,7 @@ START:
     CMP.L REGESTER_ROTATE_VALUE, D1     ;see if we are indeed register rotate
     BNE END_SEG                         ;if not end this
     MOVE D2,D1      
-    AND.L MEMORY_ROTATE_VALUE,D1        ;bit mask data to see if we are going to be
+    AND.L (MEMORY_ROTATE_VALUE),D1        ;bit mask data to see if we are going to be
     CMP.L MEMORY_ROTATE_VALUE,D1        ; a register or memeory rotate type
     BEQ SHIFT_FOR_MEM
     MOVE D2,D1                          ;restor data
@@ -69,7 +69,7 @@ RIGHT_ONLY  LEA RIGHT_TEXT,A1           ;print out right
 MEMORY_OR_REGESTER_MODE    MOVE.L D2,D1 ;are we memeory or regester mode?
     LSR #8,D1
     LSR #1,D1
-    AND.L MEMORY_ROTATE_VALUE,D1        ;bit mask data
+    AND.L (MEMORY_ROTATE_VALUE),D1        ;bit mask data
     CMP.L MEMORY_ROTATE_VALUE,D1        ;are we memeory?
     BNE REGESTER_SEG 
     MOVE.L D2,D1
@@ -142,6 +142,7 @@ REG_TEXT DC.B 'D',0
 COMMA DC.B ',',0
 EA_TEXT DC.B 'EA',0
     END    START        ; last line of source
+
 
 
 *~Font name~Courier New~

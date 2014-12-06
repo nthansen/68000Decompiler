@@ -8,7 +8,7 @@
 START:           
     MOVE.L (SAMPLE_INPUT),D2    ;load up sample input
     MOVE.L D2,D1                ;store it   
-    AND.L CMPI_VALUE,D1         ;bit mask to test for CMPI
+    AND.L (CMPI_VALUE),D1         ;bit mask to test for CMPI
     CMP.L CMPI_VALUE,D1         ;are we CMPI?
     BNE END_SEG                 ;yes? keep going
     LEA CMPI_TEXT,A1            ;print out CMPI.
@@ -48,6 +48,7 @@ BYTE_TEXT DC.B 'B #',0
 LONG_TEXT DC.B 'L #',0
 WORD_TEXT DC.B 'W #',0
     END    START       
+
 
 *~Font name~Courier New~
 *~Font size~10~

@@ -9,7 +9,7 @@ START:
     CMP.L CMP_VALUE,D1          ;load up the variable to compare to
     MOVE.L (SAMPLE_INPUT),D2    ;load up sample input
     MOVE.L D2,D1                ;copy data
-    AND.L CMP_VALUE, D1         ;bit mask the input
+    AND.L (CMP_VALUE), D1         ;bit mask the input
     CMP.L CMP_VALUE,D1          ;compare the input
     BNE END_SEG                 ;if we are not CMP go to the end seg
     LEA CMP_TEXT,A1             ;print out CMP.
@@ -63,6 +63,7 @@ WORD_TEXT DC.B 'W ',0
 EA_TEXT DC.B ',EA',0
 REGESTER_TEXT DC.B 'D',0
     END    START        ; last line of source
+
 
 *~Font name~Courier New~
 *~Font size~10~
