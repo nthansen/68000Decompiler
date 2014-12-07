@@ -8,8 +8,13 @@
 *-----------------------------------------------------------
     ORG    $1000
 START:
+    SUBQ.B #5,D6
     MOVE.L (SAMPLE_INPUT),D2    ;load up input
     MOVE.L D2,D1                ;copy it
+    AND.L (SUB_QUICK_VALUE),D1
+    CMP.L SUB_QUICK_VALUE,D1
+    BEQ SUBQ_SEG
+    MOVE.L D2,D1
     ;determine if we are a type of add
     AND.L (ADD_VALUE),D1
     CMP.L ADD_VALUE,D1
@@ -158,10 +163,60 @@ ADD_V2
     MOVE.B #14,D0
     TRAP #15
     BRA END_SEG
+SUBQ_SEG LEA SUBQ_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
+    MOVE.L D2,D1
+    LSL #8,D1
+    LSR #8,D1
+    LSR #6,D1
+    CMP.L #0,D1
+    BEQ SUBQ_BYTE_SEG
+    CMP.L #1,D1
+    BEQ SUBQ_WORD_SEG
+    BRA SUBQ_LONG_SEG
+SUBQ_DATA_SEG MOVE.L D2,D1
+    LSL #4,D1
+    LSR #5,D1
+    LSR #8,D1
+    
+    LEA VALUE_TEXT,A1   ;print out #
+    MOVE.B #14,D0
+    TRAP #15
+    MOVE.B #3,D0        ;print out what register we are in
+    TRAP #15
+    
+    LEA COMMA_TEXT,A1
+    MOVE.B #14,D0       
+    TRAP #15
+    LEA EA_TEXT,A1
+    MOVE.B #14,D0       ;hand off to ea
+    TRAP #15
+    BRA END_SEG
+SUBQ_BYTE_SEG
+    LEA BYTE_TEXT,A1
+    MOVE.B #14,D0       ;hand off to ea
+    TRAP #15
+    BRA SUBQ_DATA_SEG
+SUBQ_LONG_SEG
+    LEA LONG_TEXT,A1
+    MOVE.B #14,D0       ;hand off to ea
+    TRAP #15
+    BRA SUBQ_DATA_SEG
+SUBQ_WORD_SEG
+    LEA WORD_TEXT,A1
+    MOVE.B #14,D0       ;hand off to ea
+    TRAP #15 
+    BRA SUBQ_DATA_SEG
 END_SEG    SIMHALT
 SUB_VALUE DC.L $9000
 SUB_TEXT DC.B 'SUB',0
-SAMPLE_INPUT DC.L $9BC1
+*#,EA
+SUB_QUICK_VALUE DC.L $5100
+SUBQ_TEXT DC.B 'SUBQ',0
+VALUE_TEXT DC.B '#',0
+
+SAMPLE_INPUT DC.L $5B06
 ADD_VALUE DC.L $D000
 ADD_TEXT DC.B 'ADD',0
 ADD_ADDR_TEXT DC.B 'A',0
@@ -183,6 +238,7 @@ EA_TEXT DC.B 'EA',0
 COMMA_TEXT DC.B ',',0
     END    START        ; last line of source
     
+
 
 *~Font name~Courier New~
 *~Font size~10~
