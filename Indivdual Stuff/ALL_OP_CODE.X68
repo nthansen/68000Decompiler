@@ -64,7 +64,7 @@ LEA_SEG
     LEA SPACE_TEXT,A1
     MOVE #14,D0
     TRAP #15
-    
+        
     LEA EA_TEXT,A1              ;print out EA
     MOVE #14,D0                 ;aka hand off here
     TRAP #15  
@@ -218,6 +218,7 @@ NEG_SEG
     CMP.L #0,D1                     ;are we dealing with a bit?
     BNE NEG_LONG_SEG                    ;if not go to next test
     
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1                   ;print out bit
     MOVE.B #14,D0
     TRAP #15
@@ -230,6 +231,7 @@ NEG_SEG
 NEG_LONG_SEG CMP.L #2,D1                ;are we a long?
     BNE NEG_WORD_SEG                    ;if not we are a word
     
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT, A1                  ;print out L
     MOVE.B #14, D0
     TRAP #15
@@ -239,7 +241,9 @@ NEG_LONG_SEG CMP.L #2,D1                ;are we a long?
     TRAP #15
     
     BRA NEG_EA_SEG                      ;move to EA section
-NEG_WORD_SEG LEA WORD_TEXT, A1             ;print out W
+NEG_WORD_SEG 
+    MOVE.B #2,D4        ;potential necicary information for EA
+    LEA WORD_TEXT, A1             ;print out W
     MOVE.B #14,D0
     TRAP #15
     
@@ -340,6 +344,7 @@ MOVEA_LONG_SEG
     CMP.L #2,D1
     BNE MOVEA_WORD_SEG
     
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -351,6 +356,7 @@ MOVEA_LONG_SEG
     BRA MOVEA_REST_SEG
 MOVEA_WORD_SEG
     ;print out W
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -396,6 +402,8 @@ MOVEM_SEG
 MOVEM_LONG_SEG  ;see if we are a long if so print
     CMP.L #1,D1
     BNE MOVEA_WORD_SEG
+    
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -406,6 +414,7 @@ MOVEM_LONG_SEG  ;see if we are a long if so print
     
     BRA MOVEM_REST_SEG
 MOVEM_WORD_SEG  ;print out W
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -477,6 +486,8 @@ MOVE_SEG
     LSR #4,D1
     CMP.L #1,D1
     BNE MOVE_LONG_SEG   ;if we are a byte print it out
+    
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -484,11 +495,14 @@ MOVE_SEG
 MOVE_LONG_SEG               ;if we are a long print ito ut
     CMP.L #2,D1
     BNE MOVE_WORD_SEG
+    
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
     BRA MOVE_REST_SEG
 MOVE_WORD_SEG           ;if we are a word print it
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -626,6 +640,7 @@ ADDA_W_SEG
     LEA ADD_REG_TEXT,A1        ;print out the a in ADD(A)
     MOVE.B #14,D0
     TRAP #15
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1            ;print out our size
     MOVE.B #14,D0
     TRAP #15
@@ -634,6 +649,7 @@ ADDA_L_SEG
     LEA ADD_REG_TEXT,A1        ;print out the a in ADD(A)
     MOVE.B #14,D0            
     TRAP #15
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1            ;print out the size
     MOVE.B #14,D0
     TRAP #15
@@ -677,6 +693,7 @@ ADD_SEG
     BEQ ADD_W_V2
     BRA END_SEG
 ADD_B_V1 ;print out byte then go to the rest
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -686,6 +703,7 @@ ADD_B_V1 ;print out byte then go to the rest
     
     BRA ADD_V1
 ADD_L_V1 ;print out the long then to the rest
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -695,6 +713,7 @@ ADD_L_V1 ;print out the long then to the rest
     
     BRA ADD_V1
 ADD_W_V1    ;print out the w then to the rest
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -704,6 +723,7 @@ ADD_W_V1    ;print out the w then to the rest
     
     BRA ADD_V1
 ADD_B_V2    ;print out the b then the rest
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -713,6 +733,7 @@ ADD_B_V2    ;print out the b then the rest
     
     BRA ADD_V2
 ADD_L_V2    ;print out the l then ther eest
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -722,6 +743,7 @@ ADD_L_V2    ;print out the l then ther eest
     
     BRA ADD_V2
 ADD_W_V2    ;print out the w then the rest
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -795,6 +817,7 @@ SUBQ_DATA_SEG MOVE.L D2,D1
     TRAP #15
     BRA END_SEG
 SUBQ_BYTE_SEG
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1
     MOVE.B #14,D0       ;hand off to ea
     TRAP #15
@@ -805,6 +828,7 @@ SUBQ_BYTE_SEG
     
     BRA SUBQ_DATA_SEG
 SUBQ_LONG_SEG
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1
     MOVE.B #14,D0       ;hand off to ea
     TRAP #15
@@ -814,6 +838,7 @@ SUBQ_LONG_SEG
     
     BRA SUBQ_DATA_SEG
 SUBQ_WORD_SEG
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0       ;hand off to ea
     TRAP #15 
@@ -840,6 +865,7 @@ CMP_SEG
     LSR #6,D1
     CMP.L #0,D1                 ;are we a byte?
     BNE CMP_WORD_SEG        
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1            ;yes? print it out
     MOVE.B #14,D0
     TRAP #15
@@ -850,7 +876,7 @@ CMP_SEG
     BRA CMP_REG_SEG
 CMP_WORD_SEG CMP.L #1,D1            ;are we a word?
     BNE CMP_LONG_SEG
-    
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1            ;yes? print it out
     MOVE.B #14,D0
     TRAP #15
@@ -858,7 +884,10 @@ CMP_WORD_SEG CMP.L #1,D1            ;are we a word?
     MOVE.B #14,D0
     TRAP #15
     BRA CMP_REG_SEG
-CMP_LONG_SEG                        ;only thing left is long
+CMP_LONG_SEG     
+    MOVE.B #3,D4        ;potential necicary information for EA
+                   ;only thing left is long
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1            ;print it
     MOVE.B #14,D0
     TRAP #15
@@ -897,6 +926,7 @@ CMPI_SEG
     LSR #6,D1
     CMP.L #0,D1
     BNE LONG_SEG                ;if we are not byte mabye long?
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1
     MOVE.B #14,D0               ;print out byte
     TRAP #15
@@ -912,6 +942,7 @@ CMPI_SEG
     BRA EA_SEG                  ;go to ea
 LONG_SEG CMP.L #2,D0            ;are we long? no? then word
     BNE WORD_SEG
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1            ;print out long
     MOVE.B #14,D0
     TRAP #15
@@ -925,6 +956,7 @@ LONG_SEG CMP.L #2,D0            ;are we long? no? then word
     
     BRA EA_SEG                  ;branch to ea
 WORD_SEG 
+    MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1            ;print out word
     MOVE.B #14,D0
     TRAP #15
@@ -1027,7 +1059,9 @@ OR_REG_SEG_V2  MOVE.L D2,D1         ;get back the orgional data so we can see
         
     BRA END_SEG
 * Put program code here
-OR_BYTE_PRINT_V1  LEA BYTE_TEXT,A1     ;print B
+OR_BYTE_PRINT_V1  
+    MOVE.B #0,D4        ;potential necicary information for EA
+    LEA BYTE_TEXT,A1     ;print B
     MOVE.B  #14,D0                  
     TRAP    #15
     
@@ -1036,7 +1070,9 @@ OR_BYTE_PRINT_V1  LEA BYTE_TEXT,A1     ;print B
     TRAP #15
     
     BRA OR_REG_SEG_V1                  ;go to the proper way to pring out register and EA
-OR_LONG_PRINT_V1  LEA LONG_TEXT,A1     ;print L
+OR_LONG_PRINT_V1  
+    MOVE.B #3,D4        ;potential necicary information for EA
+    LEA LONG_TEXT,A1     ;print L
     MOVE.B  #14,D0                  
     TRAP    #15 
     LEA SPACE_TEXT,A1
@@ -1044,7 +1080,9 @@ OR_LONG_PRINT_V1  LEA LONG_TEXT,A1     ;print L
     TRAP #15
    
     BRA OR_REG_SEG_V1                  ;go to the proper way to pring out register and EA
-OR_WORD_PRINT_V1  LEA WORD_TEXT,A1     ;print W
+OR_WORD_PRINT_V1  
+    MOVE.B #2,D4        ;potential necicary information for EA
+    LEA WORD_TEXT,A1     ;print W
     MOVE.B  #14,D0                  
     TRAP    #15 
     LEA SPACE_TEXT,A1
@@ -1052,7 +1090,9 @@ OR_WORD_PRINT_V1  LEA WORD_TEXT,A1     ;print W
     TRAP #15
    
     BRA OR_REG_SEG_V1                  ;go to the proper way to pring out register and EA
-OR_BYTE_PRINT_V2  LEA BYTE_TEXT,A1     ;print B
+OR_BYTE_PRINT_V2  
+    MOVE.B #0,D4        ;potential necicary information for EA
+    LEA BYTE_TEXT,A1     ;print B
     MOVE.B  #14,D0                  
     TRAP    #15 
     LEA SPACE_TEXT,A1
@@ -1060,7 +1100,9 @@ OR_BYTE_PRINT_V2  LEA BYTE_TEXT,A1     ;print B
     TRAP #15
    
     BRA OR_REG_SEG_V2                  ;go to the proper way to pring out register and EA
-OR_LONG_PRINT_V2  LEA LONG_TEXT,A1     ;print L
+OR_LONG_PRINT_V2  
+    MOVE.B #3,D4        ;potential necicary information for EA
+    LEA LONG_TEXT,A1     ;print L
     MOVE.B  #14,D0                  
     TRAP    #15 
     LEA SPACE_TEXT,A1
@@ -1068,7 +1110,9 @@ OR_LONG_PRINT_V2  LEA LONG_TEXT,A1     ;print L
     TRAP #15
    
     BRA OR_REG_SEG_V2                  ;go to the proper way to pring out register and EA
-OR_WORD_PRINT_V2  LEA WORD_TEXT,A1     ;print W
+OR_WORD_PRINT_V2  
+    MOVE.B #2,D4        ;potential necicary information for EA
+    LEA WORD_TEXT,A1     ;print W
     MOVE.B  #14,D0                  
     TRAP    #15 
     LEA SPACE_TEXT,A1
@@ -1100,6 +1144,7 @@ ORI_SEG
     CMP.L #0, D1
     BNE ORI_LONG_SEG
     
+    MOVE.B #0,D4        ;potential necicary information for EA
     LEA BYTE_TEXT,A1                  ;Here we will hand off to EA guy and he will print any EA
     MOVE.B #14,D0               
     TRAP #15   
@@ -1107,13 +1152,15 @@ ORI_SEG
 
 ORI_LONG_SEG    CMP.L #1,D1
     BNE ORI_WORD_SEG
-    
+    MOVE.B #3,D4        ;potential necicary information for EA
     LEA LONG_TEXT,A1                  ;Here we will hand off to EA guy and he will print any EA
     MOVE.B #14,D0               
     TRAP #15   
     BRA ORI_AFTER_SIZE_SEG
     
-ORI_WORD_SEG    LEA WORD_TEXT,A1                  ;Here we will hand off to EA guy and he will print any EA
+ORI_WORD_SEG    
+    MOVE.B #2,D4        ;potential necicary information for EA
+    LEA WORD_TEXT,A1                  ;Here we will hand off to EA guy and he will print any EA
     MOVE.B #14,D0               
     TRAP #15   
     
@@ -1257,6 +1304,7 @@ WORD_TEXT DC.B '.W',0
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 *~Font name~Courier New~
 *~Font size~10~
