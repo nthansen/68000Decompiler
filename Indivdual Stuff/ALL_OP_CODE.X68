@@ -1,14 +1,16 @@
 *-----------------------------------------------------------
-* Title      :
-* Written by :
-* Date       :
-* Description:
+* Title      : Decode OP
+* Written by : Brad Minogue
+* Date       : 12/8/14
+* Description: This is the segment of code that decodes the OP
+*code input, EA will be appended to this.
 *-----------------------------------------------------------
     ORG    $1000
 START:                  ; first instruction of program
-*-------------------------------NOP-------------------------------    
-
+    ;line of code is obsolete once we get data from IO
     MOVE.L (SAMPLE_INPUT),D2
+DECODE_OPCODE           ;this is what is called when IO has input to decode
+*-------------------------------NOP-------------------------------    
     MOVE.L D2,D1
     CMP.L NOP_VALUE, D1         ;check to see if we are NOP
     BNE JSR_SEG                 ;if not just end this
@@ -156,17 +158,17 @@ MEMORY_OR_REGESTER_MODE    MOVE.L D2,D1 ;are we memeory or regester mode?
     TRAP #15
     BRA END_SEG
 SHIFT_REGESTER_SEG   MOVE.L D2,D1             ;restore data
-    LSL #8,D1
-    LSL #2,D1
+    LSL #8,D1                           ;pre-shifting data
+    LSL #2,D1                           ;for latter on
     LSR #8,D1
     LSR #2,D1
     LSL #5,D1
     MOVE.L D2,D3                        ;restore data
-    LSL #4,D3
+    LSL #4,D3                           
     LSR #4,D3
     LSR #8,D3
-    LSR #1,D3                           ;figure out
-    CMP #0,D1
+    LSR #1,D3                           ;figure out something
+    CMP #0,D1                           ; *ouch*
     BNE SHIFT_REG_VALUE
         
     LEA VALUE_TEXT,A1
@@ -178,13 +180,13 @@ SHIFT_REG_VALUE   LEA VALUE_TEXT,A1           ;print out #
     TRAP #15
     BRA FINISH_OUTPUT
     
-FINISH_OUTPUT
+FINISH_OUTPUT               ;this segment of code is shared by all shfit code
     MOVE.L D3,D1
     EXT.L   D1                ;Tells us what register we are using
     MOVE.B  #3,D0                ;loading
     TRAP    #15                  ;displaying
     
-    MOVE.L D2,D1
+    MOVE.L D2,D1            ;shift data around to figure out what reg we are using
     LSL #8,D1
     LSL #5,D1
     LSR #8,D1
@@ -196,8 +198,8 @@ FINISH_OUTPUT
     MOVE.L #14,D0
     TRAP #15
     EXT.L D1                            ;print out Dn
-    MOVE #3,D0
-    TRAP #15
+    MOVE #3,D0                          ;print out what register we are in
+    TRAP #15                            ;and the print it out
     BRA END_SEG                         ;we are done here
 *------------------------------NEG--------------------------------
 NEG_SEG
@@ -557,41 +559,41 @@ DISP_SEG
 *------------------------------MULS/DIVS----------------------------
 MULS_SEG
     MOVE.L D2,D1
-    AND.L  (MULS_VALUE),D1
-    CMP.L MULS_VALUE,D1
-    BNE DIVS_SEG
+    AND.L  (MULS_VALUE),D1      ;bit mask data to see if we are
+    CMP.L MULS_VALUE,D1         ;MULS or DIVS
+    BNE DIVS_SEG                ;if we are divs go to the seg of code
     
-    LEA MULS_TEXT,A1
+    LEA MULS_TEXT,A1            ;if we are muls print it out
     MOVE.B #14,D0
     TRAP #15
-    BRA DIVS_EA_SEG
+    BRA DIVS_EA_SEG             ;this seg is badly labled, it is shared by muls and divs
 DIVS_SEG MOVE.L D2,D1
-    AND.L (DIVS_VALUE),D1
+    AND.L (DIVS_VALUE),D1       ;are we divs? if not move on
     CMP.L DIVS_VALUE,D1
     BNE CMP_SEG
-    LEA DIVS_TEXT,A1
+    LEA DIVS_TEXT,A1            ;print out divs
     MOVE.B #14,D0
     TRAP #15
     
-    LEA SPACE_TEXT,A1
+    LEA SPACE_TEXT,A1           ;print out a space for formating issiues
     MOVE.B #14,D0
     TRAP #15
     
-    BRA DIVS_EA_SEG
+    BRA DIVS_EA_SEG             ;this seg is shared by both muls and divs, but does ea stuff
 DIVS_EA_SEG LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
     
-    LEA COMMA_TEXT,A1
+    LEA COMMA_TEXT,A1           ;print out a , for formating
     MOVE.B #14,D0
     TRAP #15
     
-    BRA DIVS_REG_SEG
+    BRA DIVS_REG_SEG            ;this seg is badly labled it is for divs and muls and does rest of output
 DIVS_REG_SEG LEA REG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
     
-    MOVE.L D2,D1
+    MOVE.L D2,D1                ;find what reg we are in and print it out
     LSL #4,D1
     LSR #5,D1
     LSR #8,D1 
@@ -1201,6 +1203,7 @@ END_SEG    SIMHALT             ; halt simulator
 
 
 SAMPLE_INPUT DC.L $003C
+*Bellow this line are variables for each op code
 *-----------------------------------------------------------------
 NOP_VALUE DC.L $4E71
 NOP_TEXT DC.B 'NOP',0
