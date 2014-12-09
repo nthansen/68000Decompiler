@@ -55,7 +55,8 @@ LEA_SEG
     JSR PRINT_SPACE
     
     MOVEM.L D0-D3,-(SP)     ;back up data before hand off
-    LEA EA_TEXT,A1              ;print out EA
+    LEA EA_TEXT,A1              ;print out EA
+
     MOVE #14,D0                 ;aka hand off here
     TRAP #15  
     MOVEM.L (SP)+,D0-D3     ;restore data
@@ -256,7 +257,7 @@ MOVE_TO_CCR_SEG
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM.L(SP)+,D0-D3           ;restore data
+    MOVEM.L (SP)+,D0-D3           ;restore data
     ;print out ,
     JSR COMMA_TEXT
     ;print out ccr
@@ -1315,6 +1316,7 @@ WORD_TEXT DC.B '.W',0
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 
 
