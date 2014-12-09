@@ -23,9 +23,12 @@ RAWA      EQU     %000    * (xxx).W
 RALA      EQU     %001    * (xxx).L
 RID       EQU     %100    * #<data>
 
-ADD       EQU     %0011001111111100 * 00 SIZE 11 DEST REG 010 DEST MODE 001 SOURCE MODE 100 SOURCE REG 011
+ADD       EQU     %0011001111111100 * 00 SIZE 11 DEST REG 010 DEST MODE 001 SOURCE MODE 111 SOURCE REG 011
 
 START:                  ; first instruction of program
+
+
+;NEED TO CHANGE SO WE GE THE REG FIRST FOR SOURCE!
 
 * Put program code here
     
@@ -51,7 +54,28 @@ GETDESTINATIONMODE:
     JMP PRINT_EA_MODE
 
 RETURNDESTMODE:
-    LEA GETSOURCEMODE,A0
+    LEA A3,A0                   ; return to where we are in the op code
+    JMP PRINT_EA_REG
+    
+
+GETSOURCEMODE:    
+    MOVE.L D3,D1                ; this is for detecting the mode
+    LSL #8,D1                   ; Remove starting address
+    LSL #2,D1                   ; Remove offset
+    LSR #8,D1                   ; Put back into place
+    LSR #5,D1                   ; Remove register
+    MOVE.B D1,D6                ; store in D6 to be used for display
+    LEA GETSOURCEREG,A0         ; once finished decode the source reg
+    JMP PRINT_EA_MODE
+    
+GETSOURCEREG:
+    MOVE.L D3,D1                ; this is for detecting the register
+    LSL #8,D1                   ; Remove starting address
+    LSL #5,D1                   ; Remove offset
+    LSR #8,D1                   ; Put back into place
+    LSR #5,D1                   ; Remove excess 
+    MOVE.B D1,D7                ; store in D7 to be used for display
+    LEA A3,A0                   ; Once finished jump to where we are in op code
     JMP PRINT_EA_REG
         
 
@@ -170,26 +194,6 @@ PRINT_EA_ID_REG_L:
     MOVE.B  #14,D0
     TRAP    #15
     JMP     (A0)
-
-GETSOURCEMODE:    
-    MOVE.L D3,D1                ; this is for detecting the mode
-    LSL #8,D1                   ; Remove starting address
-    LSL #2,D1                   ; Remove offset
-    LSR #8,D1                   ; Put back into place
-    LSR #5,D1                   ; Remove register
-    MOVE.B D1,D6                ; store in D6 to be used for display
-    LEA GETSOURCEREG,A0         ; once finished decode the source reg
-    JMP PRINT_EA_MODE
-    
-GETSOURCEREG:
-    MOVE.L D3,D1                ; this is for detecting the register
-    LSL #8,D1                   ; Remove starting address
-    LSL #5,D1                   ; Remove offset
-    LSR #8,D1                   ; Put back into place
-    LSR #5,D1                   ; Remove excess 
-    MOVE.B D1,D7                ; store in D7 to be used for display
-    LEA MAIN,A0                 ; Once finished jump to main
-    JMP PRINT_EA_REG
     
 PRINT_EA_DRD
     LEA DRD_TEXT,A1
@@ -260,6 +264,8 @@ AWA_END_TEXT DC.B ').W',0
 
 
     END    START        ; last line of source
+
+
 
 
 
