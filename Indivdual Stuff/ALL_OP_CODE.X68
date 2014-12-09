@@ -34,9 +34,11 @@ JSR_SEG
     MOVE.B #14,D0
     TRAP #15       
     
+    MOVEM D0-D3,-(SP)           ;back up data before function call
     LEA EA_TEXT,A1              ;this is where we hand off to EA
     MOVE.B #14,D0
     TRAP #15   
+    MOVEM (SP)+,D0-D3
     BRA END_SEG
 *-------------------------------RTS-------------------------------    
 RTS_SEG    
@@ -66,11 +68,12 @@ LEA_SEG
     LEA SPACE_TEXT,A1
     MOVE #14,D0
     TRAP #15
-        
+    
+    MOVEM D0-D3,-(SP)     ;back up data before hand off
     LEA EA_TEXT,A1              ;print out EA
     MOVE #14,D0                 ;aka hand off here
     TRAP #15  
-    
+    MOVEM (SP)+,D0-D3     ;restore data
     LEA COMMA_TEXT,A1
     MOVE #14,D0
     TRAP #15
@@ -153,9 +156,12 @@ MEMORY_OR_REGESTER_MODE    MOVE.L D2,D1 ;are we memeory or regester mode?
     CMP.L MEMORY_ROTATE_VALUE,D1        ;are we memeory?
     BNE SHIFT_REGESTER_SEG 
     MOVE.L D2,D1
+    
+    MOVEM D0-D3,-(SP)                   ;back up data
     LEA EA_TEXT,A1                      ;had off to ea
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3                   ;restore data
     BRA END_SEG
 SHIFT_REGESTER_SEG   MOVE.L D2,D1             ;restore data
     LSL #8,D1                           ;pre-shifting data
@@ -255,9 +261,12 @@ NEG_WORD_SEG
     
     
     BRA NEG_EA_SEG    
-NEG_EA_SEG LEA EA_TEXT,A1               ;print out EA also this is
+NEG_EA_SEG 
+    MOVEM D0-D3,-(SP)           ;back up our data
+    LEA EA_TEXT,A1               ;print out EA also this is
     MOVE.B #14,D0                   ;where we ould hand off to EA
     TRAP #15
+    MOVEM (SP)+,D0-D3
     BRA END_SEG
 *-------------------------------MOVE------------------------------    
 MOVES_SEG
@@ -294,6 +303,9 @@ MOVE_FROM_CCR_SEG
     TRAP #15
     MOVE.L D2,D1
     ;print out ccr
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     LEA CCR_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -302,20 +314,27 @@ MOVE_FROM_CCR_SEG
     MOVE.B #14,D0
     TRAP #15
     ;now we hand of to ea
+    MOVEM D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3           ;restore data
     BRA END_SEG
 MOVE_TO_CCR_SEG
     ;print out move
     LEA MOVE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     ;hand off to ea
     MOVE.L D2,D1
+    MOVEM D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3           ;restore data
     ;print out ,
     LEA COMMA_TEXT,A1
     MOVE.B #14,D0
@@ -370,9 +389,11 @@ MOVEA_WORD_SEG
     BRA MOVEA_REST_SEG
 MOVEA_REST_SEG
     ;hand off to EA
+    MOVEM D0-D3,-(SP)               ;back up our data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3               ;restore it
     ;print out ,
     LEA COMMA_TEXT,A1
     MOVE.B #14,D0
@@ -434,9 +455,11 @@ MOVEM_REST_SEG  ;find which direction we are going
     LSR #2,D1
     CMP.L #0,D1
     BNE REG_TO_MEM 
+    MOVEM D0-D3,-(SP)               ;back up data
     LEA EA_TEXT, A1 ;hand off to ea
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3               ;restore data
     LEA COMMA_TEXT, A1 ;print out ,
     MOVE.B #14,D0
     TRAP #15
@@ -445,15 +468,18 @@ MOVEM_REST_SEG  ;find which direction we are going
     TRAP #15    
     BRA END_SEG
 REG_TO_MEM
+    
     LEA LIST_TEXT, A1   ;print out list
     MOVE.B #14,D0
     TRAP #15
     LEA COMMA_TEXT, A1  ;print out ,
     MOVE.B #14,D0
     TRAP #15
+    MOVEM D0-D3,-(SP)       ;back up data
     LEA EA_TEXT, A1     ;hand off to ea
     MOVE.B #14,D0
     TRAP #15    
+    MOVEM (SP)+,D0-D3       ;restore data
     BRA END_SEG
 
 MOVE_F_SR_SEG       
@@ -461,15 +487,21 @@ MOVE_F_SR_SEG
     MOVE.B #14,D0
     TRAP #15
     MOVE.L D2,D1
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     LEA SR_TEXT,A1      ;print out sr
     MOVE.B #14,D0
     TRAP #15
     LEA COMMA_TEXT,A1   ;print out comma
     MOVE.B #14,D0
     TRAP #15
+    MOVEM D0-D3,-(SP)   ;back up data
     LEA EA_TEXT,A1      ;hand off to ea
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3   ;restore data
+    BRA END_SEG
 *-----------------------------LAST--------------------------------
 LAST_SEG
     ;see if we are a move
@@ -493,6 +525,9 @@ MOVE_SEG
     LEA BYTE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     BRA MOVE_REST_SEG
 MOVE_LONG_SEG               ;if we are a long print ito ut
     CMP.L #2,D1
@@ -502,23 +537,33 @@ MOVE_LONG_SEG               ;if we are a long print ito ut
     LEA LONG_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     BRA MOVE_REST_SEG
 MOVE_WORD_SEG           ;if we are a word print it
     MOVE.B #2,D4        ;potential necicary information for EA
     LEA WORD_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     BRA MOVE_REST_SEG
 MOVE_REST_SEG           ;hand off to ea here
+    MOVEM D0-D3,-(SP)   ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3       ;restore data
     LEA COMMA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM D0-D3,-(SP)       ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3       ;restore data
     BRA END_SEG
 *------------------------BRA/BCC---------------------------
 BRA_BCC_SEG
@@ -530,7 +575,9 @@ BRA_BCC_SEG
     LEA BRA_TEXT,A1             ;print out BRA
     MOVE.B #14,D0
     TRAP #15
-        
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15    
     MOVE.L D2,D1                ;here we are printing out the displacment
     LSL #8, D1                  ;here we get rid of the instruction
     LSR #8, D1                  ;so only the displacement is left
@@ -546,7 +593,9 @@ BCC_SEG
     LEA BCC_TEXT,A1             ;print out BCC
     MOVE.B #14,D0
     TRAP #15
-        
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15    
     MOVE.L D2,D1                ;here we are printing out the displacment
     LSL #4, D1                  ;here we get rid of the instruction
     LSR #4, D1                  ;so only the displacement is left
@@ -566,6 +615,9 @@ MULS_SEG
     LEA MULS_TEXT,A1            ;if we are muls print it out
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     BRA DIVS_EA_SEG             ;this seg is badly labled, it is shared by muls and divs
 DIVS_SEG MOVE.L D2,D1
     AND.L (DIVS_VALUE),D1       ;are we divs? if not move on
@@ -580,10 +632,12 @@ DIVS_SEG MOVE.L D2,D1
     TRAP #15
     
     BRA DIVS_EA_SEG             ;this seg is shared by both muls and divs, but does ea stuff
-DIVS_EA_SEG LEA EA_TEXT,A1
+DIVS_EA_SEG 
+    MOVEM D0-D3,-(SP)           ;back up data
+    LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    
+    MOVEM (SP)+,D0-D3           ;restore data
     LEA COMMA_TEXT,A1           ;print out a , for formating
     MOVE.B #14,D0
     TRAP #15
@@ -646,6 +700,9 @@ ADDA_W_SEG
     LEA WORD_TEXT,A1            ;print out our size
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     BRA ADDA_SEG                ;now to the rest of the OP
 ADDA_L_SEG
     LEA ADD_REG_TEXT,A1        ;print out the a in ADD(A)
@@ -655,12 +712,16 @@ ADDA_L_SEG
     LEA LONG_TEXT,A1            ;print out the size
     MOVE.B #14,D0
     TRAP #15
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     BRA ADDA_SEG                ;now to the rest of the OP
 ADDA_SEG
+    MOVEM D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1              ;EA will always come first in ADDA
     MOVE.B #14,D0               ;so hand off here
     TRAP #15
-
+    MOVEM (SP)+,D0-D3           ;restore data
     LEA COMMA_TEXT,A1           ;print out a ,
     MOVE.B #14,D0
     TRAP #15
@@ -755,9 +816,11 @@ ADD_W_V2    ;print out the w then the rest
     
     BRA ADD_V2 
 ADD_V1  ;here we are going to finish the EA then Dn
+    MOVEM D0-D3,-(SP)   ;back up data
     LEA EA_TEXT,A1  ;hand off to EA
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3       ;restore data
     LEA COMMA_TEXT,A1   ;type a ,
     MOVE.B #14,D0
     TRAP #15
@@ -784,9 +847,11 @@ ADD_V2
     LEA COMMA_TEXT,A1
     MOVE.B #14,D0       ;hand off to ea
     TRAP #15
+    MOVEM D0-D3,-(SP)                   ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3
     BRA END_SEG
 SUBQ_SEG LEA SUBQ_TEXT,A1
     MOVE.B #14,D0
@@ -814,9 +879,11 @@ SUBQ_DATA_SEG MOVE.L D2,D1
     LEA COMMA_TEXT,A1
     MOVE.B #14,D0       
     TRAP #15
+    MOVEM D0-D3,-(SP)               ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0       ;hand off to ea
     TRAP #15
+    MOVEM (SP)+,D0-D3               ;restore data
     BRA END_SEG
 SUBQ_BYTE_SEG
     MOVE.B #0,D4        ;potential necicary information for EA
@@ -904,14 +971,17 @@ CMP_REG_SEG LEA REG_TEXT,A1    ;we are always dealing with
     LSL #4,D1                   ;find out what reg we are
     LSR #5,D1
     LSR #8,D1
+    
     EXT.L D1                    ;print that out
     MOVE.B #3,D0
     TRAP #15
     BRA CMP_EA_SEG
 CMP_EA_SEG                          ;hand off to ea
+    MOVEM D0-D3,-(SP)               ;back up datat
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM (SP)+,D0-D3               ;restore data
     BRA END_SEG
 *-------------------------CMPI--------------------------------
 CMPI_SEG
@@ -975,10 +1045,11 @@ EA_SEG
     LEA SPACE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
+    MOVEM D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1              ;branch to ea
     MOVE.B #14,D0
     TRAP #15
-
+    MOVEM (SP)+,D0-D3           ;back up data
 *--------------------------OR--------------------------------
 OR_SEG
     MOVE.L D2,D1                ;Copy data
@@ -1015,10 +1086,12 @@ OR_SEG
     CMP.B WORD_VAL_TWO, D1
     BEQ OR_WORD_PRINT_V2
     
-OR_REG_SEG_V1  LEA EA_TEXT,A1      ;this section is for printing out the register and EA
+OR_REG_SEG_V1  
+    MOVEM D0-D3,-(SP)           ;back up data
+    LEA EA_TEXT,A1      ;this section is for printing out the register and EA
     MOVE.B #14,D0               ;if the EA came first
     TRAP #15
-    
+    MOVEM (SP)+,D0-D3                   ;restore data
     LEA COMMA_TEXT,A1                 ;print ,
     MOVE.B  #14,D0                  
     TRAP    #15
@@ -1054,11 +1127,11 @@ OR_REG_SEG_V2  MOVE.L D2,D1         ;get back the orgional data so we can see
     LEA COMMA_TEXT,A1                  ;print ,
     MOVE.B  #14,D0                  
     TRAP    #15
-         
+    MOVEM D0-D3,-(SP)            ;back up data     
     LEA EA_TEXT,A1               ;print out EA to signle for EA guy
     MOVE.B #14,D0
     TRAP #15
-        
+    MOVEM (SP)+,D0-D3           ;restore data
     BRA END_SEG
 * Put program code here
 OR_BYTE_PRINT_V1  
@@ -1167,7 +1240,11 @@ ORI_WORD_SEG
     TRAP #15   
     
     
-ORI_AFTER_SIZE_SEG    LEA VALUE_TEXT,A1                ;here we will be printing out data
+ORI_AFTER_SIZE_SEG    
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
+    LEA VALUE_TEXT,A1                ;here we will be printing out data
     MOVE.B #14,D0
     TRAP #15
     LEA COMMA_TEXT,A1               ;Next comes a ',' so print that
@@ -1183,6 +1260,9 @@ ORI_TO_CCR  LEA ORI_TEXT,A1         ;We found that this is indeed ORI # so print
     MOVE.B #14,D0                   ;we will also look at our data later, nothing for now 
     TRAP #15                    
     
+    LEA SPACE_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
     LEA VALUE_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
@@ -1202,7 +1282,7 @@ END_SEG    SIMHALT             ; halt simulator
 
 
 
-SAMPLE_INPUT DC.L $003C
+SAMPLE_INPUT DC.L $2439
 *Bellow this line are variables for each op code
 *-----------------------------------------------------------------
 NOP_VALUE DC.L $4E71
@@ -1307,6 +1387,7 @@ WORD_TEXT DC.B '.W',0
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 
 *~Font name~Courier New~
