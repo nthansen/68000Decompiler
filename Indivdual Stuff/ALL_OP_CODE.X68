@@ -25,11 +25,11 @@ JSR_SEG
     JSR PRINT_JSR
     JSR PRINT_SPACE  
     
-    MOVEM D0-D3,-(SP)           ;back up data before function call
+    MOVEM.L D0-D3,-(SP)           ;back up data before function call
     LEA EA_TEXT,A1              ;this is where we hand off to EA
     MOVE.B #14,D0
     TRAP #15   
-    MOVEM (SP)+,D0-D3
+    MOVEM.L (SP)+,D0-D3
     
     BRA END_SEG
 *-------------------------------RTS-------------------------------    
@@ -54,11 +54,11 @@ LEA_SEG
     JSR PRINT_LEA
     JSR PRINT_SPACE
     
-    MOVEM D0-D3,-(SP)     ;back up data before hand off
+    MOVEM.L D0-D3,-(SP)     ;back up data before hand off
     LEA EA_TEXT,A1              ;print out EA
     MOVE #14,D0                 ;aka hand off here
     TRAP #15  
-    MOVEM (SP)+,D0-D3     ;restore data
+    MOVEM.L (SP)+,D0-D3     ;restore data
     JSR PRINT_COMMA
     JSR PRINT_ADD_REG
     
@@ -123,11 +123,11 @@ MEMORY_OR_REGESTER_MODE    MOVE.L D2,D1 ;are we memeory or regester mode?
     BNE SHIFT_REGESTER_SEG 
     MOVE.L D2,D1
     
-    MOVEM D0-D3,-(SP)                   ;back up data
+    MOVEM.L D0-D3,-(SP)                   ;back up data
     LEA EA_TEXT,A1                      ;had off to ea
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3                   ;restore data
+    MOVEM.L (SP)+,D0-D3                   ;restore data
     BRA END_SEG
 SHIFT_REGESTER_SEG   MOVE.L D2,D1             ;restore data
     LSL #8,D1                           ;pre-shifting data
@@ -196,11 +196,11 @@ NEG_WORD_SEG
     
     BRA NEG_EA_SEG    
 NEG_EA_SEG 
-    MOVEM D0-D3,-(SP)           ;back up our data
+    MOVEM.L D0-D3,-(SP)           ;back up our data
     LEA EA_TEXT,A1               ;print out EA also this is
     MOVE.B #14,D0                   ;where we ould hand off to EA
     TRAP #15
-    MOVEM (SP)+,D0-D3
+    MOVEM.L (SP)+,D0-D3
     BRA END_SEG
 *-------------------------------MOVE------------------------------    
 MOVES_SEG
@@ -240,11 +240,11 @@ MOVE_FROM_CCR_SEG
     ;now for a comma
     JSR PRINT_COMMA
     ;now we hand of to ea
-    MOVEM D0-D3,-(SP)           ;back up data
+    MOVEM.L D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3           ;restore data
+    MOVEM.L (SP)+,D0-D3           ;restore data
     BRA END_SEG
 MOVE_TO_CCR_SEG
     ;print out move
@@ -252,11 +252,11 @@ MOVE_TO_CCR_SEG
     JSR PRINT_SPACE
     ;hand off to ea
     MOVE.L D2,D1
-    MOVEM D0-D3,-(SP)           ;back up data
+    MOVEM.L D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3           ;restore data
+    MOVEM.L(SP)+,D0-D3           ;restore data
     ;print out ,
     JSR COMMA_TEXT
     ;print out ccr
@@ -291,11 +291,11 @@ MOVEA_WORD_SEG
     BRA MOVEA_REST_SEG
 MOVEA_REST_SEG
     ;hand off to EA
-    MOVEM D0-D3,-(SP)               ;back up our data
+    MOVEM.L D0-D3,-(SP)               ;back up our data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3               ;restore it
+    MOVEM.L (SP)+,D0-D3               ;restore it
     ;print out ,
     JSR PRINT_COMMA
     ;print out A
@@ -340,11 +340,11 @@ MOVEM_REST_SEG  ;find which direction we are going
     LSR #2,D1
     CMP.L #0,D1
     BNE REG_TO_MEM 
-    MOVEM D0-D3,-(SP)               ;back up data
+    MOVEM.L D0-D3,-(SP)               ;back up data
     LEA EA_TEXT, A1 ;hand off to ea
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3               ;restore data
+    MOVEM.L (SP)+,D0-D3               ;restore data
     JSR PRINT_COMMA 
     JSR PRINT_LIST
     BRA END_SEG
@@ -352,11 +352,11 @@ REG_TO_MEM
     
     JSR PRINT_LIST
     JSR PRINT_COMMA
-    MOVEM D0-D3,-(SP)       ;back up data
+    MOVEM.L D0-D3,-(SP)       ;back up data
     LEA EA_TEXT, A1     ;hand off to ea
     MOVE.B #14,D0
     TRAP #15    
-    MOVEM (SP)+,D0-D3       ;restore data
+    MOVEM.L (SP)+,D0-D3       ;restore data
     BRA END_SEG
 
 MOVE_F_SR_SEG       
@@ -365,18 +365,19 @@ MOVE_F_SR_SEG
     JSR PRINT_SPACE
     JSR PRINT_SR
     JSR PRINT_COMMA
-    MOVEM D0-D3,-(SP)   ;back up data
+    MOVEM.L D0-D3,-(SP)   ;back up data
     LEA EA_TEXT,A1      ;hand off to ea
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3   ;restore data
+    MOVEM.L (SP)+,D0-D3   ;restore data
     BRA END_SEG
 *-----------------------------LAST--------------------------------
 LAST_SEG
     ;see if we are a move
     MOVE.L D2,D1
+    AND.L (MOVE_MIN_VALUE),D1
     CMP.L MOVE_MIN_VALUE,D1
-    BGE MOVE_SEG            ;BGE is used as all moves must be
+    BEQ MOVE_SEG            ;BGE is used as all moves must be
     BRA END_SEG             ;more than a set value, see size starts at 1
 MOVE_SEG
     JSR PRINT_MOVE
@@ -407,17 +408,17 @@ MOVE_WORD_SEG           ;if we are a word print it
     JSR PRINT_SPACE
     BRA MOVE_REST_SEG
 MOVE_REST_SEG           ;hand off to ea here
-    MOVEM D0-D3,-(SP)   ;back up data
+    MOVEM.L D0-D3,-(SP)   ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3       ;restore data
+    MOVEM.L (SP)+,D0-D3       ;restore data
     JSR PRINT_COMMA
-    MOVEM D0-D3,-(SP)       ;back up data
+    MOVEM.L D0-D3,-(SP)       ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3       ;restore data
+    MOVEM.L (SP)+,D0-D3       ;restore data
     BRA END_SEG
 *------------------------BRA/BCC---------------------------
 BRA_BCC_SEG
@@ -469,11 +470,11 @@ DIVS_SEG MOVE.L D2,D1
     
     BRA DIVS_EA_SEG             ;this seg is shared by both muls and divs, but does ea stuff
 DIVS_EA_SEG 
-    MOVEM D0-D3,-(SP)           ;back up data
+    MOVEM.L D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3           ;restore data
+    MOVEM.L (SP)+,D0-D3           ;restore data
     
     JSR PRINT_COMMA
     
@@ -505,7 +506,7 @@ SUB_SEG MOVE.L D2,D1                ;copy it
     ;determine if we are a type of SUB
     AND.L (SUB_VALUE),D1    
     CMP.L SUB_VALUE,D1
-    BNE END_SEG
+    BNE LAST_SEG
     JSR PRINT_SUB
     BRA SUB_NEXT_SEG
 SUB_NEXT_SEG    ;this is how we are going to check for which add we are
@@ -533,11 +534,11 @@ ADDA_L_SEG
     JSR PRINT_SPACE
     BRA ADDA_SEG                ;now to the rest of the OP
 ADDA_SEG
-    MOVEM D0-D3,-(SP)           ;back up data
+    MOVEM.L D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1              ;EA will always come first in ADDA
     MOVE.B #14,D0               ;so hand off here
     TRAP #15
-    MOVEM (SP)+,D0-D3           ;restore data
+    MOVEM.L (SP)+,D0-D3           ;restore data
     JSR PRINT_COMMA
 
     JSR PRINT_ADD_REG
@@ -565,7 +566,7 @@ ADD_SEG
     BEQ ADD_L_V2
     CMP.L ADD_WORD_V2,D1
     BEQ ADD_W_V2
-    BRA END_SEG
+    BRA LAST_SEG
 ADD_B_V1 ;print out byte then go to the rest
     MOVE.B #0,D4        ;potential necicary information for EA
     JSR PRINT_BYTE
@@ -603,11 +604,11 @@ ADD_W_V2    ;print out the w then the rest
     
     BRA ADD_V2 
 ADD_V1  ;here we are going to finish the EA then Dn
-    MOVEM D0-D3,-(SP)   ;back up data
+    MOVEM.L D0-D3,-(SP)   ;back up data
     LEA EA_TEXT,A1  ;hand off to EA
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3       ;restore data
+    MOVEM.L (SP)+,D0-D3       ;restore data
     JSR PRINT_COMMA
     JSR PRINT_REG
     MOVE.L D2,D1
@@ -624,11 +625,11 @@ ADD_V2
     LSR #8,D1    
     JSR PRINT_D1
     JSR PRINT_COMMA
-    MOVEM D0-D3,-(SP)                   ;back up data
+    MOVEM.L D0-D3,-(SP)                   ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3
+    MOVEM.L (SP)+,D0-D3
     BRA END_SEG
 SUBQ_SEG 
     JSR PRINT_SUBQ
@@ -649,11 +650,11 @@ SUBQ_DATA_SEG MOVE.L D2,D1
     JSR PRINT_VALUE
     JSR PRINT_D1
     JSR PRINT_COMMA
-    MOVEM D0-D3,-(SP)               ;back up data
+    MOVEM.L D0-D3,-(SP)               ;back up data
     LEA EA_TEXT,A1
     MOVE.B #14,D0       ;hand off to ea
     TRAP #15
-    MOVEM (SP)+,D0-D3               ;restore data
+    MOVEM.L (SP)+,D0-D3               ;restore data
     BRA END_SEG
 SUBQ_BYTE_SEG
     MOVE.B #0,D4        ;potential necicary information for EA
@@ -721,11 +722,11 @@ CMP_REG_SEG
     JSR PRINT_D1
     BRA CMP_EA_SEG
 CMP_EA_SEG                          ;hand off to ea
-    MOVEM D0-D3,-(SP)               ;back up datat
+    MOVEM.L D0-D3,-(SP)               ;back up datat
     LEA EA_TEXT,A1
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3               ;restore data
+    MOVEM.L (SP)+,D0-D3               ;restore data
     BRA END_SEG
 *-------------------------CMPI--------------------------------
 CMPI_SEG
@@ -769,11 +770,11 @@ WORD_SEG
     BRA EA_SEG
 EA_SEG 
     JSR PRINT_SPACE
-    MOVEM D0-D3,-(SP)           ;back up data
+    MOVEM.L D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1              ;branch to ea
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3           ;back up data
+    MOVEM.L (SP)+,D0-D3           ;back up data
 *--------------------------OR--------------------------------
 OR_SEG
     MOVE.L D2,D1                ;Copy data
@@ -812,11 +813,11 @@ OR_SEG
     BEQ OR_WORD_PRINT_V2
     
 OR_REG_SEG_V1  
-    MOVEM D0-D3,-(SP)           ;back up data
+    MOVEM.L D0-D3,-(SP)           ;back up data
     LEA EA_TEXT,A1      ;this section is for printing out the register and EA
     MOVE.B #14,D0               ;if the EA came first
     TRAP #15
-    MOVEM (SP)+,D0-D3                   ;restore data
+    MOVEM.L (SP)+,D0-D3                   ;restore data
     JSR COMMA_TEXT
     
     MOVE.L D2,D1                ;get back the orgional data so we can see
@@ -841,11 +842,11 @@ OR_REG_SEG_V2  MOVE.L D2,D1         ;get back the orgional data so we can see
 
     JSR PRINT_COMMA
     
-    MOVEM D0-D3,-(SP)            ;back up data     
+    MOVEM.L D0-D3,-(SP)            ;back up data     
     LEA EA_TEXT,A1               ;print out EA to signle for EA guy
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0-D3           ;restore data
+    MOVEM.L (SP)+,D0-D3           ;restore data
     BRA END_SEG
 * Put program code here
 OR_BYTE_PRINT_V1  
@@ -900,7 +901,7 @@ ORI_SEG
     MOVE.L D2, D1                   ;copy input to maintain purity
     LSR #8,D1                       ;get rid of any extra data
     CMP.L  ORI_VALUE, D1            ;see if we are an ORI
-    BNE LAST_SEG                     ;if not we are done here
+    BNE ADD_SUB_SEG                     ;if not we are done here
     
     JSR PRINT_ORI                
 
@@ -933,23 +934,23 @@ ORI_AFTER_SIZE_SEG
     MOVEM D0-D7/A0-A7,-(SP)          ;back up data
     *Hand of to EA, this call is temparary
     JSR PRINT_VALUE                 ;EA guy needs to grab our value here
-    MOVEM (SP)+,D0-D7/A0-A7
+    MOVEM.L (SP)+,D0-D7/A0-A7
     JSR PRINT_COMMA                 
-    MOVEM D0-D7/A0-A7,-(SP)         ;back up data
+    MOVEM.L D0-D7/A0-A7,-(SP)         ;back up data
     LEA EA_TEXT,A1                  ;Here we will hand off to EA guy and he will print any EA
     MOVE.B #14,D0               
     TRAP #15   
-    MOVEM (SP)+,D0-D7/A0-A7
+    MOVEM.L (SP)+,D0-D7/A0-A7
                                  
     BRA END_SEG                     ;we are done with the program
 ORI_TO_CCR  
     JSR PRINT_ORI                  
     
     JSR PRINT_SPACE    
-    MOVEM D0-D7/A0-A7,-(SP)          ;back up data
+    MOVEM.L D0-D7/A0-A7,-(SP)          ;back up data
     *Hand of to EA, this call is temparary
     JSR PRINT_VALUE                 ;EA guy needs to grab our value here
-    MOVEM (SP)+,D0-D7/A0-A7   
+    MOVEM.L (SP)+,D0-D7/A0-A7   
     
     JSR PRINT_COMMA
     
@@ -960,248 +961,248 @@ ORI_TO_CCR
 *such as print. The idea is to reduce over all code lenght and 
 *readability
 PRINT_LONG:                         
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA LONG_TEXT,A1                ;print out .L
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_WORD:                        
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA WORD_TEXT,A1                ;print out .W
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_BYTE:                        
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA BYTE_TEXT,A1                ;print out .B
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SPACE:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA SPACE_TEXT,A1                ;print out SPACE
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_COMMA:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA COMMA_TEXT,A1                ;print out ,
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_REG:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA REG_TEXT,A1                ;print out D
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_VALUE:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA COMMA_TEXT,A1                ;print out #
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_NOP:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA NOP_TEXT,A1                ;print out NOP
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_JSR:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA JSR_TEXT,A1                ;print out JSR
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_RTS:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA RTS_TEXT,A1                ;print out RTS
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LS:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA LS_TEXT,A1                ;print out LS
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_AS:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA AS_TEXT,A1                ;print out AS
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_RO:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA RO_TEXT,A1                ;print out RO
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_RIGHT:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA RIGHT_TEXT,A1                ;print out R
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LEFT:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA LEFT_TEXT,A1                ;print out L
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LEA:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA LEA_TEXT,A1                ;print out LEA
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_CCR:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA CCR_TEXT,A1                ;print out CCR
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SR:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA SR_TEXT,A1                ;print out SR
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MOVE:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA MOVE_TEXT,A1                ;print out MOVE
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MOVEM:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA MOVEM_TEXT,A1                ;print out MOVEM
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LIST:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA LIST_TEXT,A1                ;print out <LIST>
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_NEG:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA NEG_TEXT,A1                ;print out NEG
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_BRA:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA BRA_TEXT,A1                ;print out BRA
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_BCC:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA COMMA_TEXT,A1                ;print out BCC
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MULS:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA MULS_TEXT,A1                ;print out MULS
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_DIVS:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA DIVS_TEXT,A1                ;print out DIVS
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_CMP:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA CMP_TEXT,A1                ;print out CMP
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_CMPI:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA CMPI_TEXT,A1                ;print out CMPI
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ORI:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA ORI_TEXT,A1                ;print out ORI
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_OR:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA OR_TEXT,A1                ;print out OR
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SUB:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA SUB_TEXT,A1                ;print out SUB
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SUBQ:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA SUBQ_TEXT,A1                ;print out SUBQ
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ADD:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA ADD_TEXT,A1                ;print out ADD
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ADD_REG:
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     LEA ADD_REG_TEXT,A1                ;print out A
     MOVE.B #14,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_D1:                           ;assumes data is in D1, common for printing data in OP CODE
-    MOVEM D0/A0-A1,-(SP)            ;back up any data we might step on
+    MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
     MOVE #3,D0
     TRAP #15
-    MOVEM (SP)+,D0/A0-A1            ;restore any data
+    MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS
 *-----------------------------------------------------------------
 END_SEG    SIMHALT             ; halt simulator
@@ -1209,7 +1210,7 @@ END_SEG    SIMHALT             ; halt simulator
 
 
 
-SAMPLE_INPUT DC.L $2439
+SAMPLE_INPUT DC.L $D041
 *Bellow this line are variables for each op code
 *-----------------------------------------------------------------
 NOP_VALUE DC.L $4E71
@@ -1270,7 +1271,7 @@ CMP_TEXT DC.B 'CMP',0
 CMP_VALUE DC.L $B000
 *-----------------------------------------------------------------
 ORI_VALUE DC.L $0000
-ORI_TEXT DC.B 'ORI', 0
+ORI_TEXT DC.B 'ORI',0
 ORI_TO_CCR_VALUE DC.L $003C
 *-----------------------------------------------------------------
 ADDA_LONG_VALUE DC.L $7
