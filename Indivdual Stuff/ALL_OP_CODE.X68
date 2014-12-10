@@ -1048,7 +1048,7 @@ PRINT_CCR:
     RTS                             ;return to sender
 PRINT_SR:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    LEA SR_TEXT,(A1)+                ;print out SR
+    MOVE.B SR_TEXT,(A1)+                ;print out SR
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MOVE:
@@ -1098,7 +1098,7 @@ PRINT_CMP:
     RTS                             ;return to sender
 PRINT_CMPI:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B CMPI_TEXT,A1                ;print out CMPI
+    MOVE.B CMPI_TEXT,(A1)+                ;print out CMPI
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ORI:
@@ -1254,6 +1254,7 @@ WORD_TEXT DC.B '.W',0
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 
 
