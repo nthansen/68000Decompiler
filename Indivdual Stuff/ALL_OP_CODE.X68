@@ -963,184 +963,178 @@ ORI_TO_CCR
 *readability
 PRINT_LONG:                         
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B LONG_TEXT,(A1)+                ;print out .L
+    MOVE.B LONG_TEXT,(A6)+                ;print out .L
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_WORD:                        
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B WORD_TEXT,(A1)+                ;print out .W
+    MOVE.B WORD_TEXT,(A6)+                ;print out .W
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_BYTE:                        
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B BYTE_TEXT,(A1)+                ;print out .B
+    MOVE.B BYTE_TEXT,(A6)+                ;print out .B
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SPACE:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B SPACE_TEXT,(A1)+                ;print out SPACE
+    MOVE.B SPACE_TEXT,(A6)+                ;print out SPACE
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_COMMA:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B COMMA_TEXT,(A1)+                ;print out ,
+    MOVE.B COMMA_TEXT,(A6)+                ;print out ,
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_REG:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B REG_TEXT,(A1)+                ;print out D
+    MOVE.B REG_TEXT,(A6)+                ;print out D
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_VALUE:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B COMMA_TEXT,(A1)+                ;print out #
+    MOVE.B COMMA_TEXT,(A6)+                ;print out #
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_NOP:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B NOP_TEXT,(A1)+                ;print out NOP
+    MOVE.B NOP_TEXT,(A6)+                ;print out NOP
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_JSR:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B (JSR_TEXT),(A1)+                ;print out JSR
+    MOVE.B (JSR_TEXT),(A6)+                ;print out JSR
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_RTS:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B RTS_TEXT,(A1)+                ;print out RTS
+    MOVE.B RTS_TEXT,(A6)+                ;print out RTS
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LS:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B LS_TEXT,(A1)+                ;print out LS
+    MOVE.B LS_TEXT,(A6)+                ;print out LS
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_AS:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B AS_TEXT,(A1)+                ;print out AS
+    MOVE.B AS_TEXT,(A6)+                ;print out AS
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_RO:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B RO_TEXT,(A1)+                ;print out RO
+    MOVE.B RO_TEXT,(A6)+                ;print out RO
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_RIGHT:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B RIGHT_TEXT,(A1)+                ;print out R
+    MOVE.B RIGHT_TEXT,(A6)+                ;print out R
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LEFT:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B LEFT_TEXT,(A1)+                ;print out L
+    MOVE.B LEFT_TEXT,(A6)+                ;print out L
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LEA:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B LEA_TEXT,(A1)+                ;print out LEA
+    MOVE.B LEA_TEXT,(A6)+                ;print out LEA
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_CCR:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B CCR_TEXT,(A1)+                ;print out CCR
+    MOVE.B CCR_TEXT,(A6)+                ;print out CCR
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SR:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B SR_TEXT,(A1)+                ;print out SR
+    MOVE.B SR_TEXT,(A6)+                ;print out SR
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MOVE:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B MOVE_TEXT,(A1)+                ;print out MOVE
+    MOVE.B MOVE_TEXT,(A6)+                ;print out MOVE
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MOVEM:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B MOVEM_TEXT,(A1)+                ;print out MOVEM
+    MOVE.B MOVEM_TEXT,(A6)+                ;print out MOVEM
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_LIST:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B LIST_TEXT,(A1)+                ;print out <LIST>
+    MOVE.B LIST_TEXT,(A6)+                ;print out <LIST>
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_NEG:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B NEG_TEXT,(A1)+                ;print out NEG
+    MOVE.B NEG_TEXT,(A6)+                ;print out NEG
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_BRA:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B BRA_TEXT,(A1)+                ;print out BRA
+    MOVE.B BRA_TEXT,(A6)+                ;print out BRA
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_BCC:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B COMMA_TEXT,(A1)+                ;print out BCC
+    MOVE.B COMMA_TEXT,(A6)+                ;print out BCC
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_MULS:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B MULS_TEXT,(A1)+                ;print out MULS
+    MOVE.B MULS_TEXT,(A6)+                ;print out MULS
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_DIVS:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B DIVS_TEXT,(A1)+                ;print out DIVS
+    MOVE.B DIVS_TEXT,(A6)+                ;print out DIVS
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_CMP:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B CMP_TEXT,(A1)+                ;print out CMP
+    MOVE.B CMP_TEXT,(A6)+                ;print out CMP
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_CMPI:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B CMPI_TEXT,(A1)+                ;print out CMPI
+    MOVE.B CMPI_TEXT,(A6)+                ;print out CMPI
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ORI:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B ORI_TEXT,(A1)+                ;print out ORI
+    MOVE.B ORI_TEXT,(A6)+                ;print out ORI
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_OR:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B OR_TEXT,(A1)+                ;print out OR
-    MOVE.B #14,D0
-    TRAP #15
+    MOVE.B OR_TEXT,(A6)+                ;print out OR
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SUB:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B SUB_TEXT,(A1)+                ;print out SUB
-    MOVE.B #14,D0
-    TRAP #15
+    MOVE.B SUB_TEXT,(A6)+                ;print out SUB
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_SUBQ:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B SUBQ_TEXT,(A1)+                ;print out SUBQ
-    MOVE.B #14,D0
-    TRAP #15
+    MOVE.B SUBQ_TEXT,(A6)+                ;print out SUBQ
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ADD:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B ADD_TEXT,(A1)+                ;print out ADD
+    MOVE.B ADD_TEXT,(A6)+                ;print out ADD
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_ADD_REG:
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    MOVE.B ADD_REG_TEXT,(A1)+                ;print out A
+    MOVE.B ADD_REG_TEXT,(A6)+                ;print out A
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS                             ;return to sender
 PRINT_D1:                           ;assumes data is in D1, common for printing data in OP CODE
     MOVEM.L D0/A0-A1,-(SP)            ;back up any data we might step on
-    ADD #$3,D0
-    MOVE.B D2,(A1)+
+    ADD #$30,D1
+    MOVE.B D1,(A1)+
     MOVEM.L (SP)+,D0/A0-A1            ;restore any data
     RTS
 *-----------------------------------------------------------------
