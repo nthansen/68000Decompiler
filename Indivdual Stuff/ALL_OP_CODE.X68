@@ -26,9 +26,7 @@ JSR_SEG
     JSR PRINT_SPACE  
     
     MOVEM.L D0-D3,-(SP)           ;back up data before function call
-    LEA EA_TEXT,A1              ;this is where we hand off to EA
-    MOVE.B #14,D0
-    TRAP #15   
+    JSR GET_SOURCE_REGISTER  
     MOVEM.L (SP)+,D0-D3
     
     BRA END_SEG
@@ -55,10 +53,7 @@ LEA_SEG
     JSR PRINT_SPACE
     
     MOVEM.L D0-D3,-(SP)     ;back up data before hand off
-    LEA EA_TEXT,A1              ;print out EA
-
-    MOVE #14,D0                 ;aka hand off here
-    TRAP #15  
+    JSR GET_SOURCE_REGISTER    ;hand off to EA to decode where we are LEA
     MOVEM.L (SP)+,D0-D3     ;restore data
     JSR PRINT_COMMA
     JSR PRINT_ADD_REG
@@ -105,102 +100,98 @@ AS_PRINT    CMP.L AS_VALUE,D1           ;are we AS?
     BNE END_SEG 
     JSR PRINT_AS
     BRA LEFT_RIGHT
-LEFT_RIGHT    MOVE.L D2,D1              ;decide if we are left or right
+LEFT_RIGHT    MOVE.L D2,D1                  ;decide if we are left or right
     LSL #7,D1
-    LSR #7,D1                           ;git rid of all the data
+    LSR #7,D1                               ;git rid of all the data
     LSR #8,D1
     CMP #1,D1
-    BNE RIGHT_ONLY                      ;we arn't left so right
+    BNE RIGHT_ONLY                          ;we arn't left so right
     
     JSR PRINT_LEFT
     BRA MEMORY_OR_REGESTER_MODE
 RIGHT_ONLY  JSR PRINT_RIGHT
     BRA MEMORY_OR_REGESTER_MODE
-MEMORY_OR_REGESTER_MODE    MOVE.L D2,D1 ;are we memeory or regester mode?
+MEMORY_OR_REGESTER_MODE    MOVE.L D2,D1     ;are we memeory or regester mode?
     LSR #8,D1
     LSR #1,D1
-    AND.L (MEMORY_ROTATE_VALUE),D1        ;bit mask data
-    CMP.L MEMORY_ROTATE_VALUE,D1        ;are we memeory?
+    AND.L (MEMORY_ROTATE_VALUE),D1          ;bit mask data
+    CMP.L MEMORY_ROTATE_VALUE,D1            ;are we memeory?
     BNE SHIFT_REGESTER_SEG 
     MOVE.L D2,D1
     
-    MOVEM.L D0-D3,-(SP)                   ;back up data
-    LEA EA_TEXT,A1                      ;had off to ea
-    MOVE.B #14,D0
-    TRAP #15
-    MOVEM.L (SP)+,D0-D3                   ;restore data
+    MOVEM.L D0-D3,-(SP)                     ;back up data
+    JSR GET_SOURCE_REGISTER            ;have EA decode what we are shifting
+    MOVEM.L (SP)+,D0-D3                     ;restore data
     BRA END_SEG
-SHIFT_REGESTER_SEG   MOVE.L D2,D1             ;restore data
-    LSL #8,D1                           ;pre-shifting data
-    LSL #2,D1                           ;for latter on
+SHIFT_REGESTER_SEG   MOVE.L D2,D1           ;restore data
+    LSL #8,D1                               ;pre-shifting data
+    LSL #2,D1                               ;for latter on
     LSR #8,D1
     LSR #2,D1
     LSL #5,D1
-    MOVE.L D2,D3                        ;restore data
+    MOVE.L D2,D3                            ;restore data
     LSL #4,D3                           
     LSR #4,D3
     LSR #8,D3
-    LSR #1,D3                           ;figure out something
-    CMP #0,D1                           ; *ouch*
+    LSR #1,D3                               ;figure out something
+    CMP #0,D1                               ; *ouch*
     BNE SHIFT_REG_VALUE
     JSR PRINT_VALUE
     BRA FINISH_OUTPUT
 SHIFT_REG_VALUE JSR PRINT_VALUE
     BRA FINISH_OUTPUT
     
-FINISH_OUTPUT               ;this segment of code is shared by all shfit code
+FINISH_OUTPUT                               ;this segment of code is shared by all shfit code
     MOVE.L D3,D1
     JSR PRINT_D1
     
-    MOVE.L D2,D1            ;shift data around to figure out what reg we are using
+    MOVE.L D2,D1                            ;shift data around to figure out what reg we are using
     LSL #8,D1
     LSL #5,D1
     LSR #8,D1
     LSR #5,D1                           
     JSR COMMA_TEXT
     JSR PRINT_D1
-    BRA END_SEG                         ;we are done here
+    BRA END_SEG                             ;we are done here
 *------------------------------NEG--------------------------------
 NEG_SEG
-    MOVE.L D2,D1                    ;copy input to maintain purity
-    LSR #8,D1                       ;get rid of data that isn't involved in testing NEG
-    CMP.L NEG_VALUE, D1             ;test to see if we are neg
-    BNE MOVES_SEG                     ;if we are not NEG end this
+    MOVE.L D2,D1                            ;copy input to maintain purity
+    LSR #8,D1                               ;get rid of data that isn't involved in testing NEG
+    CMP.L NEG_VALUE, D1                     ;test to see if we are neg
+    BNE MOVES_SEG                           ;if we are not NEG end this
     
     JSR PRINT_NEG
     
-    MOVE.L D2,D1                    ;Copy data in
-    LSL #8,D1                       ;get rid of the NEG code
+    MOVE.L D2,D1                            ;Copy data in
+    LSL #8,D1                               ;get rid of the NEG code
     LSR #8,D1
-    LSR #6, D1                      ;get rid of the EA code
+    LSR #6, D1                              ;get rid of the EA code
         
-    CMP.L #0,D1                     ;are we dealing with a bit?
-    BNE NEG_LONG_SEG                    ;if not go to next test
+    CMP.L #0,D1                             ;are we dealing with a bit?
+    BNE NEG_LONG_SEG                        ;if not go to next test
     
-    MOVE.B #0,D4        ;potential necicary information for EA
+    MOVE.B #0,D4                            ;potential necicary information for EA
     JSR PRINT_BYTE
     JSR PRINT_SPACE
     
-    BRA NEG_EA_SEG                      ;mote to teh EA section
-NEG_LONG_SEG CMP.L #2,D1                ;are we a long?
-    BNE NEG_WORD_SEG                    ;if not we are a word
+    BRA NEG_EA_SEG                          ;mote to teh EA section
+NEG_LONG_SEG CMP.L #2,D1                    ;are we a long?
+    BNE NEG_WORD_SEG                        ;if not we are a word
     
-    MOVE.B #3,D4        ;potential necicary information for EA
+    MOVE.B #3,D4                            ;potential necicary information for EA
     JSR PRINT_LONG
     JSR PRINT_SPACE
-    BRA NEG_EA_SEG                      ;move to EA section
+    BRA NEG_EA_SEG                          ;move to EA section
 NEG_WORD_SEG 
-    MOVE.B #2,D4        ;potential necicary information for EA
+    MOVE.B #2,D4                            ;potential necicary information for EA
     JSR PRINT_WORD
     JSR PRINT_SPACE
     
     
     BRA NEG_EA_SEG    
 NEG_EA_SEG 
-    MOVEM.L D0-D3,-(SP)           ;back up our data
-    LEA EA_TEXT,A1               ;print out EA also this is
-    MOVE.B #14,D0                   ;where we ould hand off to EA
-    TRAP #15
+    MOVEM.L D0-D3,-(SP)                     ;back up our data
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3
     BRA END_SEG
 *-------------------------------MOVE------------------------------    
@@ -242,9 +233,7 @@ MOVE_FROM_CCR_SEG
     JSR PRINT_COMMA
     ;now we hand of to ea
     MOVEM.L D0-D3,-(SP)           ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_DESTINATION_REGISTER
     MOVEM.L (SP)+,D0-D3           ;restore data
     BRA END_SEG
 MOVE_TO_CCR_SEG
@@ -254,9 +243,7 @@ MOVE_TO_CCR_SEG
     ;hand off to ea
     MOVE.L D2,D1
     MOVEM.L D0-D3,-(SP)           ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3           ;restore data
     ;print out ,
     JSR COMMA_TEXT
@@ -293,9 +280,7 @@ MOVEA_WORD_SEG
 MOVEA_REST_SEG
     ;hand off to EA
     MOVEM.L D0-D3,-(SP)               ;back up our data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3               ;restore it
     ;print out ,
     JSR PRINT_COMMA
@@ -342,9 +327,7 @@ MOVEM_REST_SEG  ;find which direction we are going
     CMP.L #0,D1
     BNE REG_TO_MEM 
     MOVEM.L D0-D3,-(SP)               ;back up data
-    LEA EA_TEXT, A1 ;hand off to ea
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3               ;restore data
     JSR PRINT_COMMA 
     JSR PRINT_LIST
@@ -354,9 +337,7 @@ REG_TO_MEM
     JSR PRINT_LIST
     JSR PRINT_COMMA
     MOVEM.L D0-D3,-(SP)       ;back up data
-    LEA EA_TEXT, A1     ;hand off to ea
-    MOVE.B #14,D0
-    TRAP #15    
+    JSR GET_SOURCE_REGISTER   
     MOVEM.L (SP)+,D0-D3       ;restore data
     BRA END_SEG
 
@@ -367,9 +348,7 @@ MOVE_F_SR_SEG
     JSR PRINT_SR
     JSR PRINT_COMMA
     MOVEM.L D0-D3,-(SP)   ;back up data
-    LEA EA_TEXT,A1      ;hand off to ea
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3   ;restore data
     BRA END_SEG
 *-----------------------------LAST--------------------------------
@@ -410,15 +389,11 @@ MOVE_WORD_SEG           ;if we are a word print it
     BRA MOVE_REST_SEG
 MOVE_REST_SEG           ;hand off to ea here
     MOVEM.L D0-D3,-(SP)   ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3       ;restore data
     JSR PRINT_COMMA
     MOVEM.L D0-D3,-(SP)       ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_DESTINATION_REGISTER
     MOVEM.L (SP)+,D0-D3       ;restore data
     BRA END_SEG
 *------------------------BRA/BCC---------------------------
@@ -472,9 +447,7 @@ DIVS_SEG MOVE.L D2,D1
     BRA DIVS_EA_SEG             ;this seg is shared by both muls and divs, but does ea stuff
 DIVS_EA_SEG 
     MOVEM.L D0-D3,-(SP)           ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3           ;restore data
     
     JSR PRINT_COMMA
@@ -536,9 +509,7 @@ ADDA_L_SEG
     BRA ADDA_SEG                ;now to the rest of the OP
 ADDA_SEG
     MOVEM.L D0-D3,-(SP)           ;back up data
-    LEA EA_TEXT,A1              ;EA will always come first in ADDA
-    MOVE.B #14,D0               ;so hand off here
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3           ;restore data
     JSR PRINT_COMMA
 
@@ -606,9 +577,7 @@ ADD_W_V2    ;print out the w then the rest
     BRA ADD_V2 
 ADD_V1  ;here we are going to finish the EA then Dn
     MOVEM.L D0-D3,-(SP)   ;back up data
-    LEA EA_TEXT,A1  ;hand off to EA
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3       ;restore data
     JSR PRINT_COMMA
     JSR PRINT_REG
@@ -627,9 +596,7 @@ ADD_V2
     JSR PRINT_D1
     JSR PRINT_COMMA
     MOVEM.L D0-D3,-(SP)                   ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3
     BRA END_SEG
 SUBQ_SEG 
@@ -652,9 +619,7 @@ SUBQ_DATA_SEG MOVE.L D2,D1
     JSR PRINT_D1
     JSR PRINT_COMMA
     MOVEM.L D0-D3,-(SP)               ;back up data
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0       ;hand off to ea
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3               ;restore data
     BRA END_SEG
 SUBQ_BYTE_SEG
@@ -724,9 +689,7 @@ CMP_REG_SEG
     BRA CMP_EA_SEG
 CMP_EA_SEG                          ;hand off to ea
     MOVEM.L D0-D3,-(SP)               ;back up datat
-    LEA EA_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3               ;restore data
     BRA END_SEG
 *-------------------------CMPI--------------------------------
@@ -747,7 +710,7 @@ CMPI_SEG
     JSR PRINT_LONG
     JSR PRINT_SPACE
     
-    JSR PRINT_VALUE
+    JSR GET_IMMEDIATE_VALUE
     
     BRA EA_SEG                  ;go to ea
 LONG_SEG CMP.L #2,D0            ;are we long? no? then word
@@ -757,25 +720,24 @@ LONG_SEG CMP.L #2,D0            ;are we long? no? then word
     JSR PRINT_LONG
     JSR PRINT_SPACE
     
-    JSR PRINT_VALUE
+    JSR GET_IMMEDIATE_VALUE
     
     BRA EA_SEG                  ;branch to ea
 WORD_SEG 
     MOVE.B #2,D4        ;potential necicary information for EA
     
-    JSR PRINT_LONG
+    JSR PRINT_WORD
     JSR PRINT_SPACE
     
-    JSR PRINT_WORD
+    JSR GET_IMMEDIATE_VALUE
     
     BRA EA_SEG
 EA_SEG 
     JSR PRINT_SPACE
     MOVEM.L D0-D3,-(SP)           ;back up data
-    LEA EA_TEXT,A1              ;branch to ea
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3           ;back up data
+    BRA END_SEG
 *--------------------------OR--------------------------------
 OR_SEG
     MOVE.L D2,D1                ;Copy data
@@ -815,9 +777,7 @@ OR_SEG
     
 OR_REG_SEG_V1  
     MOVEM.L D0-D3,-(SP)           ;back up data
-    LEA EA_TEXT,A1      ;this section is for printing out the register and EA
-    MOVE.B #14,D0               ;if the EA came first
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3                   ;restore data
     JSR COMMA_TEXT
     
@@ -844,9 +804,7 @@ OR_REG_SEG_V2  MOVE.L D2,D1         ;get back the orgional data so we can see
     JSR PRINT_COMMA
     
     MOVEM.L D0-D3,-(SP)            ;back up data     
-    LEA EA_TEXT,A1               ;print out EA to signle for EA guy
-    MOVE.B #14,D0
-    TRAP #15
+    JSR GET_SOURCE_REGISTER
     MOVEM.L (SP)+,D0-D3           ;restore data
     BRA END_SEG
 * Put program code here
@@ -934,13 +892,11 @@ ORI_AFTER_SIZE_SEG
     JSR PRINT_SPACE
     MOVEM D0-D7/A0-A7,-(SP)          ;back up data
     *Hand of to EA, this call is temparary
-    JSR PRINT_VALUE                 ;EA guy needs to grab our value here
+    JSR GET_IMMEDIATE_VALUE                 ;EA guy needs to grab our value here
     MOVEM.L (SP)+,D0-D7/A0-A7
     JSR PRINT_COMMA                 
     MOVEM.L D0-D7/A0-A7,-(SP)         ;back up data
-    LEA EA_TEXT,A1                  ;Here we will hand off to EA guy and he will print any EA
-    MOVE.B #14,D0               
-    TRAP #15   
+    JSR GET_SOURCE_REGISTER   
     MOVEM.L (SP)+,D0-D7/A0-A7
                                  
     BRA END_SEG                     ;we are done with the program
@@ -950,7 +906,7 @@ ORI_TO_CCR
     JSR PRINT_SPACE    
     MOVEM.L D0-D7/A0-A7,-(SP)          ;back up data
     *Hand of to EA, this call is temparary
-    JSR PRINT_VALUE                 ;EA guy needs to grab our value here
+    JSR GET_IMMEDIATE_VALUE                ;EA guy needs to grab our value here
     MOVEM.L (SP)+,D0-D7/A0-A7   
     
     JSR PRINT_COMMA
@@ -1140,8 +1096,21 @@ PRINT_D1:                           ;assumes data is in D1, common for printing 
 *-----------------------------------------------------------------
 END_SEG    SIMHALT             ; halt simulator
 
-
-
+GET_DESTINATION_REGISTER
+    LEA EA_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
+    RTS
+GET_SOURCE_REGISTER
+    LEA EA_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
+    RTS
+GET_IMMEDIATE_VALUE
+    LEA EA_TEXT,A1
+    MOVE.B #14,D0
+    TRAP #15
+    RTS
 
 SAMPLE_INPUT DC.L $D041
 *Bellow this line are variables for each op code
@@ -1248,6 +1217,7 @@ WORD_TEXT DC.B '.W',0
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 
 
