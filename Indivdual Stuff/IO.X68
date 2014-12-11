@@ -17,15 +17,8 @@ START:                  ; first instruction of program
         LEA     STACK, SP           *Get the stak pointer
         
         JSR     GET_START_ADDR
-        JSR     GET_ENDING_ADDR
-        CLR.L   D1                  * Clear D1
-        CLR.L   D2                  * Clear D2
-        CLR.L   D3                  * Clear D3
-        CLR.L   D5                  * Clear D5
-        CLR.L   D6                  * Clear D6
-        CLR.L   D7                  * Clear D7
-        JSR     DATA_LOOP
-        *JSR DISPLAY_COMMAND
+        JSR     CLEAR_ALL
+        
         RTS
         
             
@@ -33,14 +26,14 @@ START:                  ; first instruction of program
 DATA_LOOP
         CMP.L   A4,A5
         BEQ     DONE
-        MOVE.W (A4)+,D3
-        JSR DISPLAY_COMMAND    
+        MOVE.W (A4)+,D3 
+        JSR PRINT_CURRENT_ADDR   
         BRA DATA_LOOP  
 
 PRINT           
         MOVE.B  #$00,(A1)                 * Terminate the string
         CLR.L   D0                        * Clear D0   
-        MOVE.B  #14,D0                    * Load task number 14 for printing
+        MOVE.B  #13,D0                    * Load task number 14 for printing
         LEA     buffer,A1                 * Load the buffer into A1 
         TRAP    #15                       * Print the buffer              
         RTS
@@ -48,64 +41,120 @@ PRINT
 *TEST FOR PRINT SUBROUTINE
 DISPLAY_COMMAND 
         CLR.L   D2
-        MOVE.L  #buffer,A1
-        MOVE.B  #'D',(A1)+
-        MOVE.B  #'A',(A1)+
-        MOVE.B  #' ',(A1)+  
+        *MOVE.L  #buffer,A1
+        *MOVE.B  #'D',(A1)+
+        *MOVE.B  #'A',(A1)+
+        *MOVE.B  #' ',(A1)+  
+        *BRA     PRINT
+        RTS
+
+PRINT_CURRENT_ADDR
+        CLR.L   D7
+        MOVE.L  #buffer,A1      *Load the buffer
+        *Get the first number
+        MOVE.L  A4,D7           *Get the address
+        LSR.L   #$08,D7        
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char         
+        MOVE.B  D7,(A1)+        *Push to the buffer
+        CLR.L   D7              *Clear D7
+        *Get the second number
+        MOVE.L  A4,D7
+        LSL.L   #$04,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.l   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char
+        MOVE.B  D7,(A1)+ 
+        CLR.L   D7              *Clear D7        
+        *Get the third number
+        MOVE.L  A4,D7           
+        LSL.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char         
+        MOVE.B  D7,(A1)+
+        CLR.L   D7              *Clear D7
+        *Get the forth number
+        MOVE.L  A4,D7
+        LSL.L   #$08,D7         
+        LSL.L   #$04,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char         
+        MOVE.B  D7,(A1)+
+        CLR.L   D7              *Clear D7
+        *Get the fifth number
+        MOVE.L  A4,D7
+        LSL.L   #$08,D7         
+        LSL.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char
+        MOVE.B  D7,(A1)+
+        CLR.L   D7              *Clear D7
+        *Get the sixth number
+        MOVE.L  A4,D7
+        LSL.L   #$08,D7         
+        LSL.L   #$08,D7         
+        LSL.L   #$04,D7        
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char         
+        MOVE.B  D7,(A1)+
+        CLR.L   D7              *Clear D7 
+        *Get the seventh number
+        MOVE.L  A4,D7
+        LSL.L   #$08,D7        
+        LSL.L   #$08,D7         
+        LSL.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char
+        MOVE.B  D7,(A1)+
+        CLR.L   D7              *Clear D7
+        *Get the eight number
+        MOVE.L  A4,D7
+        LSL.L   #$08,D7         
+        LSL.L   #$08,D7         
+        LSL.L   #$08,D7         
+        LSL.L   #$04,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$08,D7         
+        LSR.L   #$04,D7
+        JSR     HEX_TO_CHAR     *Convert HEX to char         
+        MOVE.B  D7,(A1)+ 
+        CLR.L   D7              *Clear D7        
         BRA     PRINT
         RTS
 
-*NOT MINE        
-hex_to_ascii    
-    ANDI.L  #$000000FF,D1                   * Isolate the size
-    CMP.B   #4,D1                           * Compare the size to 4
-    BGT     hta_error                       * Error if the size is > 4
-    CMP.B   #0,D1                           * Compare the size to 0
-    BLE     hta_error                       * Error if the size < 0
-    MOVEM.L D0/D2-D3,-(A7)                  * Push the register data onto the stack
-    ROL.L   #1,D1                           * Rotate left by 1 to multiply the size by 2
-    MOVE.L  D1,D3                           * Save the counter into D3
-                
-hta_loop        
-    MOVE.L  D0,D2                           * Copy data at D0 into D2
-    ANDI.B  #%00001111,D2                   * Select the first ASCII character in D2
-    CMP.B   #9,D2                           * Compare the character to 9
-    BLE     hta_number                      * Branch to hex number if <= 9
-    ADDI    #55,D2                          * If letter, add 55 to make it an ASCII value
-    BRA     hta_continue                    * Branch to stack operation
-                
-hta_number      
-    ADDI    #48,D2                          * If number, add 48 to make it an ASCII value
-
-hta_continue    
-    MOVE.B  D2,-(A7)                        * Add the ASCII value to the stack
-    ROR.L   #4,D0                           * Rotate right by 4 to get the next character
-    SUBI    #1,D1                           * Subtract 1 from the counter
-    CMP.B   #0,D1                           * Compare the counter to 0
-    BNE     hta_loop                        * Branch to convert the next character if counter is not 0
-                
-hta_result      
-    MOVE.B  (A7)+,(A1)+                     * Retrieve ASCII values from the stack and put them in A1
-    SUBI    #1,D3                           * Subtract 1 from the counter
-    CMP.B   #0,D3                           * Compare the counter to 0
-    BNE     hta_result                      * Branch to retrieve the next character if counter is not 0
-    MOVEM.L (A7)+,D0/D2-D3                  * Retrieve original data for the register
-
-hta_finish      
-    RTS                                     * Return
-    
-*////////////////////////////////////////////////////////////////////////////////////////
-*odd_error: The provided address was odd, so print an error and return a -1 for the address.
-*////////////////////////////////////////////////////////////////////////////////////////
-hta_error       
-*    LEA     hta_error_msg,A1                * Assign hex to ascii error message into A1
-    LEA     'sdf',A1
-    MOVE.B  #14,D0                          * Assign task code for message into D0
-    TRAP    #15                             * Display message
-    RTS                                     * Return
-
-*END NOT MINE
-
+HEX_TO_CHAR                                                                                                   
+        CMP.B   #$9,D7                    *Check if digit                            
+        BLE     DIG_TO_ASCII              *Convert digit                 
+        BRA     LET_TO_ASCII              *Convert letter
+                                                                                                    
+DIG_TO_ASCII                                                                                               
+        ADDI.b  #$30,D7                                                                  
+        RTS
+                                                                                                              
+LET_TO_ASCII                                                                                            
+        ADDI.B  #$37,D7                                                                   
+        RTS
+        
 GET_START_ADDR
         LEA     INPUT_MSG_START,A1 *Load the start message in A1
         MOVE.B  #14,D0             *Display the message
@@ -122,12 +171,9 @@ GET_START_ADDR
         JSR     CHECK_BOUNDS
         MOVEA.L D3,A4
         
-        CLR.L   D1                  * Clear D1
-        CLR.L   D2                  * Clear D2
-        CLR.L   D3                  * Clear D3
-        CLR.L   D5                  * Clear D5
-        
-        RTS 
+        JSR     CLEAR_ALL        
+        JSR     GET_ENDING_ADDR
+         
 
 GET_ENDING_ADDR        
         LEA     INPUT_MSG_END,A1   *Load the end message in A1
@@ -148,10 +194,8 @@ GET_ENDING_ADDR
         BLE     WRONG_INPUT         * Error if address is below or equal starting address
         MOVE.L  D3,A5
         
-        CLR.L   D1                  * Clear D1
-        CLR.L   D2                  * Clear D2
-        CLR.L   D3                  * Clear D3
-        CLR.L   D5                  * Clear D5         
+        JSR     CLEAR_ALL
+        JSR     DATA_LOOP        
         RTS
 
 CONVERT_ONE_CHAR_TO_HEX
@@ -215,50 +259,53 @@ CHECK_IF_EVEN
         CMP.B   #01,D2         *If there is a remainder then display error;
         BEQ     ODD_INPUT
         RTS
-
-;CONVERT_HEX_TO_ASCII
-;        ANDI.L  #$000000FF,D1
-;        CMP.B   #4,D1             *If size is greater than 4
-;        BGT     DISPLAY_BYTE_ERR  *then display incorrect byte size error
-;        CMP.B   #0,D1             *If size is less or equal to 0
-;        BLE     DISPLAY_BYTE_ERR  *do the same
         
 WRONG_INPUT
         LEA     INPUT_ERR,A1
         MOVE.B  #14,D0
         TRAP    #15
         CLR.L   D3
+        JSR     CLEAR_ALL
         BRA     GET_START_ADDR
 
 INPUT_TOO_SHORT
         LEA     INPUT_SHORT_ERR,A1
         MOVE.B  #14,D0
         TRAP    #15
+        JSR     CLEAR_ALL
         BRA     GET_START_ADDR
 
 INPUT_TOO_LONG
         LEA     INPUT_LONG_ERR,A1
         MOVE.B  #14,D0
         TRAP    #15
+        JSR     CLEAR_ALL
         BRA     GET_START_ADDR
 
 ODD_INPUT
         LEA     ODD_ERR,A1
         MOVE.B  #14,D0
         TRAP    #15
+        JSR     CLEAR_ALL
         BRA     GET_START_ADDR
-
-DISPLAY_BYTE_ERR
-        LEA     BYTE_ERR,A1
-        MOVE    #14,D0
-        TRAP    #15
 
 DISPLAY_NEG_ERR
         LEA     NEG_ADDR,A1
         MOVE.B  #14,D0
         TRAP    #15
-        
+        JSR     CLEAR_ALL
         BRA     GET_START_ADDR
+
+CLEAR_ALL               *This function clears all of the data registers
+        CLR.L   D1      *Clear D1
+        CLR.L   D2      *Clear D2
+        CLR.L   D3      *Clear D3
+        CLR.L   D4      *Clear D4
+        CLR.L   D5      *Clear D5
+        CLR.L   D6      *Clear D6
+        CLR.L   D7      *Clear D7
+        RTS  
+        
 DONE
     SIMHALT
         
@@ -277,6 +324,7 @@ END_ADDR            DS.B    80
 BUFFER              DS.B    80    
     END    START        ; last line of source
    
+
 
 
 
