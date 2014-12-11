@@ -15,18 +15,27 @@ END     EQU $00FFFFFE
     ORG    $1000
 START:                  ; first instruction of program
         LEA     STACK, SP           *Get the stak pointer
-        MOVE.L  #buffer,A1
-        *JSR     GET_START_ADDR
-        *JSR     GET_ENDING_ADDR
-        JSR DISPLAY_COMMAND
+        
+        JSR     GET_START_ADDR
+        JSR     GET_ENDING_ADDR
+        CLR.L   D1                  * Clear D1
+        CLR.L   D2                  * Clear D2
+        CLR.L   D3                  * Clear D3
+        CLR.L   D5                  * Clear D5
+        CLR.L   D6                  * Clear D6
+        CLR.L   D7                  * Clear D7
+        JSR     DATA_LOOP
+        *JSR DISPLAY_COMMAND
         RTS
         
             
 */////////////////////SUBROUTINES/////////////////////////
 DATA_LOOP
-        MOVE.W (A4)+,D3    
         CMP.L   A4,A5
-        BEQ     DONE  
+        BEQ     DONE
+        MOVE.W (A4)+,D3
+        JSR DISPLAY_COMMAND    
+        BRA DATA_LOOP  
 
 PRINT           
         MOVE.B  #$00,(A1)                 * Terminate the string
@@ -39,8 +48,10 @@ PRINT
 *TEST FOR PRINT SUBROUTINE
 DISPLAY_COMMAND 
         CLR.L   D2
+        MOVE.L  #buffer,A1
         MOVE.B  #'D',(A1)+
-        MOVE.B  #'A',(A1)+  
+        MOVE.B  #'A',(A1)+
+        MOVE.B  #' ',(A1)+  
         BRA     PRINT
         RTS
 
@@ -104,6 +115,7 @@ GET_START_ADDR
         MOVE.B  #2,D0              *The starting address input in D1
         TRAP    #15
         
+        CLR.L   D1
         JSR     CONVERT_ONE_CHAR_TO_HEX
         JSR     VALID_SIZE
         JSR     CHECK_IF_EVEN
@@ -125,7 +137,8 @@ GET_ENDING_ADDR
         LEA     END_ADDR,A1        *Load the end address variable
         MOVE.B  #2,D0              *The ending address input in D1
         TRAP    #15       
-
+        
+        CLR.L   D1
         JSR     CONVERT_ONE_CHAR_TO_HEX
         JSR     VALID_SIZE
         JSR     CHECK_IF_EVEN
@@ -143,7 +156,7 @@ GET_ENDING_ADDR
 
 CONVERT_ONE_CHAR_TO_HEX
         MOVE.B  (A1)+, D2   *Get character in D2
-        ADD.B   #1,D0       *add to the character count 
+        ADD.B   #1,D1       *add to the character count 
         
         CMP.B   #0, D2      *Compare it to null
         BEQ     STRING_END
@@ -174,9 +187,10 @@ STRING_END
         RTS        
 
 VALID_SIZE
-        CMPI    #$0,D1              *Check if less than 0 chars
+        SUB     #1,D1
+        CMPI    #0,D1              *Check if less than 0 chars
         BLE     INPUT_TOO_SHORT
-        CMPI    #$8,D1              *Check if more than 8 chars
+        CMPI    #8,D1              *Check if more than 8 chars
         BGT     INPUT_TOO_LONG
         RTS
         *CMP.L   #0,D3               *Check if negative just in case
@@ -263,6 +277,7 @@ END_ADDR            DS.B    80
 BUFFER              DS.B    80    
     END    START        ; last line of source
    
+
 
 
 
