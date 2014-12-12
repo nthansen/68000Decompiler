@@ -4,14 +4,19 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
+CR      EQU $0D
+LF      EQU $0A  
 STACK   EQU $7000               * Stack address
 
     ORG    $1000
 START:                  ; first instruction of program
 
     LEA STACK, SP           *Get the stak pointer
-    LEA $100E,A4
+    LEA $1014,A4
     LEA $8000,A5
+    NEG.B   D1
+    NEG.W   D4
+    NEG.L   D6
     MOVE.W  #%0100111001110101,(A4)+    * RTS it works 
     MOVE.W  #%0100111001110001,(A4)+    * NOP it works 
     MOVE.W  #%0100111010010001,(A4)+    * JSR (A1) it works
@@ -116,7 +121,7 @@ DECODE_3
 	RTS
 
 
-DECODE_4            *NOP, RTS, NEG, JSR, LEA, MOVEM
+DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
     CMP.W   #$4E71,D3                       * NOP
     BEQ     DECODE_NOP
 
@@ -124,15 +129,19 @@ DECODE_4            *NOP, RTS, NEG, JSR, LEA, MOVEM
     BEQ     DECODE_RTS
         
         
-    MOVE.L  D3,D1                           * JSR, NEG,LEA
-    LSR.L   #6,D1                           * Shift so we can check with JSR, not sure if it's useful for NEG and MOVEM though
+    MOVE.L  D3,D1                           * NEG
+    LSR.L   #8,D1                           * Shift so we can check with NED
+
+    CMP.B   #%01000100,D1                   * For NEG
+    BEQ     DECODE_NEG
     
-    * CMP.B   #%01000100,D1                   * For NEG, I don't think it works
-    
+    MOVE.L  D3,D1                           * JSR check
+    LSR.L   #6,D1                           * Shift
+
     CMP.W   #%0100111010,D1
     BEQ     DECODE_JSR
     
-    JSR CHECK_LEA                           
+    JSR CHECK_LEA_OR_MOVEM                           * Should make a check function to check for LEA and MOVEM 
     
 	RTS
    
@@ -169,18 +178,35 @@ DECODE_E
 	RTS
 	
 	
-CHECK_LEA
+CHECK_LEA_OR_MOVEM
     MOVE.W  D3,D1
     LSL     #4,D1
     LSR     #8,D1
     LSR     #5,D1
     CMP.B   #%111,D1
     BEQ     DECODE_LEA
+    
+    
+    ; need to do something where if it doesn't equal movem then send data error
     RTS
     
-CHECK_NEG
-
-
+DECODE_NEG
+    MOVE.L  #buffer,A1
+    MOVE.B  #'N',(A1)+
+    MOVE.B  #'E',(A1)+
+    MOVE.B  #'G',(A1)+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+    LSR     #6,D1
+    JSR     GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR     GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR     PRINT
+    RTS
+    
 DECODE_LEA
     MOVE.L  #buffer,A1
     MOVE.B  #'L',(A1)+
@@ -190,7 +216,8 @@ DECODE_LEA
     JSR     GETSOURCE
     MOVE.B  #',',(A1)+
     JSR     GET_DESTINATION_ADDREG
-    MOVE.B  #' ',(A1)+    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
     JSR     PRINT
     RTS
     
@@ -199,7 +226,8 @@ DECODE_NOP
     MOVE.B  #'N',(A1)+
     MOVE.B  #'O',(A1)+
     MOVE.B  #'P',(A1)+
-    MOVE.B  #' ',(A1)+    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
     JSR     PRINT
     RTS
     
@@ -208,7 +236,8 @@ DECODE_RTS
     MOVE.B  #'R',(A1)+
     MOVE.B  #'T',(A1)+
     MOVE.B  #'S',(A1)+
-    MOVE.B  #' ',(A1)+    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
     JSR     PRINT
     RTS
     
@@ -219,9 +248,37 @@ DECODE_JSR
     MOVE.B  #'R',(A1)+
     MOVE.B  #' ',(A1)+
     JSR     GETSOURCE
-    MOVE.B  #' ',(A1)+    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
     JSR     PRINT
     RTS
+
+ * Expects byte to be 00 Word 01 Long 10 in D1
+GET_SIZE 
+    CMP.B   #%00,D1
+    BEQ     GET_BYTE
+    CMP.B   #%01,D1
+    BEQ     GET_WORD
+    CMP.B   #%10,D1
+    BEQ     GET_LONG
+    
+    RTS
+    
+    
+GET_BYTE
+    MOVE.B  #'.',(A1)+
+    MOVE.B  #'B',(A1)+
+    RTS
+
+GET_WORD
+    MOVE.B  #'.',(A1)+
+    MOVE.B  #'W',(A1)+
+    RTS
+    
+GET_LONG
+    MOVE.B  #'.',(A1)+
+    MOVE.B  #'L',(A1)+
+    RTS    
 
 *data_error: D7 WORD couldn't be decoded, print it
 data_error
@@ -230,12 +287,8 @@ data_error
     MOVE.B  #'A',(A1)+
     MOVE.B  #'T',(A1)+
     MOVE.B  #'A',(A1)+
-    MOVE.B  #' ',(A1)+                      * Add a space
-    CLR.L   D0
-    MOVE.W  A4,D0                            * Copy the WORD data to D0
-    CLR.L   D1
-    MOVE.B  #2,D1                           * Byte size is 2               
-    JSR     hex_to_char
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
     JSR     PRINT
     RTS
         
@@ -601,6 +654,7 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
 
 
 *~Font name~Courier New~
