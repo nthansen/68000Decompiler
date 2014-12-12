@@ -12,11 +12,17 @@ STACK   EQU $7000               * Stack address
 START:                  ; first instruction of program
 
     LEA STACK, SP           *Get the stak pointer
-    LEA $1014,A4
     LEA $8000,A5
     NEG.B   D1
     NEG.W   D4
     NEG.L   D6
+    ORI.B   #$FF,D6
+    ORI.W   #$A134,D3
+    ORI.L   #$1435DCDA,D4
+    CMPI.B  #$AA,D2
+    CMPI.W  #$B432,D3
+    CMPI.L  #$ABCD1234,D7
+    LEA $102C,A4            ; EACH TIME WE DO A NEW COMMAND NEED TO UPDATE
     MOVE.W  #%0100111001110101,(A4)+    * RTS it works 
     MOVE.W  #%0100111001110001,(A4)+    * NOP it works 
     MOVE.W  #%0100111010010001,(A4)+    * JSR (A1) it works
@@ -27,7 +33,7 @@ START:                  ; first instruction of program
     MOVE.W  #%0100111111010011,(A4)+    * LEA (A3),A7
     *MOVEA.W (A1),A6
     * ADD.L   A6,D1
-    LEA $100E,A4
+    LEA $100A,A4
     JMP TEST
     ORG     $5000
 TEST:
@@ -103,8 +109,19 @@ DECODE_OPCODE
     CMP.W   #$F,D1          
     BEQ     data_error      * None of the required opcodes start with 1111 so throw error
     
-DECODE_0      
+DECODE_0      *ORI, CMPI, BCLEAR
+    MOVE.L  D3,D1
+    
+    LSL     #4,D1       Shift to be able to find out if it's ORI, CMPI, BCLEAR
+    LSR     #8,D1
+    LSR     #4,D1
 
+    CMP.B   #$0,D1
+    BEQ     DECODE_ORI
+    
+    CMPI.B  #%1100,D1
+    BEQ     DECODE_CMPI
+    
 	RTS
 
 DECODE_1
@@ -177,12 +194,12 @@ DECODE_E
     
 	RTS
 	
-	
 CHECK_LEA_OR_MOVEM
     MOVE.W  D3,D1
     LSL     #4,D1
     LSR     #8,D1
     LSR     #5,D1
+    
     CMP.B   #%111,D1
     BEQ     DECODE_LEA
     
@@ -190,6 +207,48 @@ CHECK_LEA_OR_MOVEM
     ; need to do something where if it doesn't equal movem then send data error
     RTS
     
+    
+DECODE_CMPI
+    MOVE.L  #buffer,A1
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #'M',(A1)+
+    MOVE.B  #'P',(A1)+
+    MOVE.B  #'I',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+    LSR     #6,D1
+    MOVE.B  #$1,D2              ; TO USE IN GET SIZE TO SAY WE NEED IMMEDIATE DATA
+    JSR     GET_SIZE
+    
+    MOVE.B  #',',(A1)+
+    JSR     GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR     PRINT
+    RTS
+    
+DECODE_ORI 
+    MOVE.L  #buffer,A1
+    MOVE.B  #'O',(A1)+
+    MOVE.B  #'R',(A1)+
+    MOVE.B  #'I',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+    LSR     #6,D1
+    MOVE.B  #$1,D2              ; TO USE IN GET SIZE TO SAY WE NEED IMMEDIATE DATA
+    JSR     GET_SIZE
+    
+    MOVE.B  #',',(A1)+
+    JSR     GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR     PRINT
+    RTS    
+
 DECODE_NEG
     MOVE.L  #buffer,A1
     MOVE.B  #'N',(A1)+
@@ -199,6 +258,8 @@ DECODE_NEG
     LSL     #8,D1
     LSR     #8,D1
     LSR     #6,D1
+    
+    MOVE.B  #$0,D2
     JSR     GET_SIZE
     MOVE.B  #' ',(A1)+
     JSR     GETSOURCE
@@ -268,18 +329,39 @@ GET_SIZE
 GET_BYTE
     MOVE.B  #'.',(A1)+
     MOVE.B  #'B',(A1)+
+    CMP.B   #1,D2                   ; 1 means we need to grab immediate data
+    BEQ     GET_BYTE_IMMEDIATE
     RTS
 
 GET_WORD
     MOVE.B  #'.',(A1)+
     MOVE.B  #'W',(A1)+
+    CMP.B   #1,D2
+    BEQ     GET_WORD_IMMEDIATE
     RTS
     
 GET_LONG
     MOVE.B  #'.',(A1)+
     MOVE.B  #'L',(A1)+
+    CMP.B   #1,D2
+    BEQ     GET_LONG_IMMEDIATE
     RTS    
+    
+GET_BYTE_IMMEDIATE
+    MOVE.B  #' ',(A1)+
+    JSR PRINT_EA_ID_REG_B
+    RTS
 
+GET_WORD_IMMEDIATE
+    MOVE.B  #' ',(A1)+
+    JSR PRINT_EA_ID_REG_W
+    RTS
+    
+GET_LONG_IMMEDIATE
+    MOVE.B  #' ',(A1)+
+    JSR PRINT_EA_ID_REG_L
+    RTS
+    
 *data_error: D7 WORD couldn't be decoded, print it
 data_error
     MOVE.L  #buffer,A1                      * Set A1 to point to the Test buffer
@@ -372,12 +454,6 @@ PRINT_EA_MODE:
     CMP.B #MARIM,D6
     BEQ PRINT_EA_ARIM               ; Prints out -(A
     CMP.B #MAWA,D6
-    ; NEED TO DO THESE IN THE REGISTER CAUSE THE MODES ALL MATCH
-    BEQ PRINT_EA_AWA                ; Prints out (
-    CMP.B #MALA,D6
-    BEQ PRINT_EA_ALA                ; Prints out (
-    CMP.B #MID,D6
-    BEQ PRINT_EA_ID                 ; Prints out #
 
 PRINT_EA_REG:
     CMP.B   #MDRD,D6                ; If the mode is a Dn then we just print the value in the register
@@ -435,6 +511,7 @@ PRINT_EA_ARIP_REG_END:
     RTS
     
 PRINT_EA_AWA_REG:
+    MOVE.B  #'(',(A1)+
     MOVE.W  (A4)+,D1
     JSR     PUSH_EA_W
     MOVE.B  #')',(A1)+
@@ -445,6 +522,7 @@ PRINT_EA_AWA_REG:
     RTS
 
 PRINT_EA_ALA_REG:
+    MOVE.B  #'(',(A1)+
     MOVE.L  (A4)+,D1
     JSR     PUSH_EA_L
     MOVE.B  #')',(A1)+
@@ -454,40 +532,29 @@ PRINT_EA_ALA_REG:
         
 PRINT_EA_ID_REG:
     CMP.B   #0,D4
-    BEQ     PRINT_EA_ID_REG_W
+    BEQ     PRINT_EA_ID_REG_W ; I think it might be a Byte not WORD
     CMP.B   #2,D4
     BEQ     PRINT_EA_ID_REG_W
     CMP.B   #3,D4
     BEQ     PRINT_EA_ID_REG_L
 
-PRINT_EA_ID_REG_B:   
+PRINT_EA_ID_REG_B:  
+    MOVE.B  #'#',(A1)+ 
+    ADD.L  #1,A4
     MOVE.B  (A4)+,D1
-    MOVE.B  #15,D0
-    MOVE.B  #16,D2
-    TRAP    #15
-    LEA     ID_END_TEXT,A1
-    MOVE.B  #14,D0
-    TRAP    #15
+    JSR     PUSH_EA_B
     RTS
     
 PRINT_EA_ID_REG_W:   
+    MOVE.B  #'#',(A1)+ 
     MOVE.W  (A4)+,D1
-    MOVE.B  #15,D0
-    MOVE.B  #16,D2
-    TRAP    #15
-    LEA     ID_END_TEXT,A1
-    MOVE.B  #14,D0
-    TRAP    #15
+    JSR     PUSH_EA_W
     RTS
     
 PRINT_EA_ID_REG_L:
+    MOVE.B  #'#',(A1)+ 
     MOVE.L  (A4)+,D1
-    MOVE.B  #15,D0
-    MOVE.B  #16,D2
-    TRAP    #15
-    LEA     ID_END_TEXT,A1
-    MOVE.B  #14,D0
-    TRAP    #15
+    JSR     PUSH_EA_L
     RTS
     
 PRINT_EA_DRD
@@ -521,13 +588,23 @@ PRINT_EA_ID
     TRAP #15
     RTS
     
-PRINT_EA_ALA
-    MOVE.B  #'(',(A1)+
-    RTS
-    
-PRINT_EA_AWA
-    MOVE.B  #'(',(A1)+
-    RTS
+PUSH_EA_B
+    MOVE.W  D1,D7
+    LSR     #4,D7
+    JSR HEX_TO_CHAR
+    MOVE.B  D7,(A1)+
+    MOVE.W  D1,D7
+    LSL.L   #8,D7
+    LSL.L   #8,D7
+    LSL.L   #8,D7
+    LSL.L   #4,D7
+    LSR.L   #8,D7
+    LSR.L   #8,D7
+    LSR.L   #8,D7
+    LSR.L   #4,D7
+    JSR HEX_TO_CHAR
+    MOVE.B  D7,(A1)+
+    RTS 
     
 PUSH_EA_W
     MOVE.W  D1,D7
@@ -603,15 +680,6 @@ PUSH_EA_L
     MOVE.B  D7,(A1)+
     JMP PUSH_EA_W
  
-GET_EA_ID    
-    MOVE.B  #'#',(A1)+
-    CMP.B   #2,D0                           *Is the size WORD
-    BEQ     Print_EA_ID_REG_W    
-    CMP.B   #4,D0                           *Is the size LONG WORD
-    BEQ     Print_EA_ID_REG_L
-    CMP.B   #1,D0                           *Is the size BYTE
-    BEQ     Print_EA_ID_REG_B
-
 DONE
     SIMHALT
         
@@ -654,6 +722,7 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
 
 
 
