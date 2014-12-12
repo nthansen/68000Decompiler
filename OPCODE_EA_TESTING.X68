@@ -12,19 +12,21 @@ START:                  ; first instruction of program
     LEA STACK, SP           *Get the stak pointer
     LEA $100E,A4
     LEA $8000,A5
-    MOVE.W  #%0100111001110101,(A4)+ RTS it works 
-    MOVE.W  #%0100111001110001,(A4)+ NOP it works 
-    MOVE.W  #%0100111010010001,(A4)+   * JSR (A1) it works
-    MOVE.W  #%0100111010111000,(A4)+ JSR (ABCD).W works fine
+    MOVE.W  #%0100111001110101,(A4)+    * RTS it works 
+    MOVE.W  #%0100111001110001,(A4)+    * NOP it works 
+    MOVE.W  #%0100111010010001,(A4)+    * JSR (A1) it works
+    MOVE.W  #%0100111010111000,(A4)+    * JSR (ABCD).W works fine
     MOVE.W  #$ABCD,(A4)+          
-    MOVE.W  #%0100111010111001,(A4)+   * JSR (1234ABCD).L ; works fine
+    MOVE.W  #%0100111010111001,(A4)+    * JSR (1234ABCD).L ; works fine
     MOVE.L  #$1234ABCD,(A4)+          
+    MOVE.W  #%0100111111010011,(A4)+    * LEA (A3),A7
     *MOVEA.W (A1),A6
     * ADD.L   A6,D1
     LEA $100E,A4
-
-    
+    JMP TEST
+    ORG     $5000
 TEST:
+    CLR.L      D1
     MOVE.W  (A4)+,D3
     JSR DECODE_OPCODE
     BRA TEST
@@ -121,14 +123,16 @@ DECODE_4            *NOP, RTS, NEG, JSR, LEA, MOVEM
     CMP.W   #$4E75,D3                       * RTS
     BEQ     DECODE_RTS
         
-    MOVE.L  D3,D1                            * JSR, NEG
-    LSR.L   #6,D1
+        
+    MOVE.L  D3,D1                           * JSR, NEG,LEA
+    LSR.L   #6,D1                           * Shift so we can check with JSR, not sure if it's useful for NEG and MOVEM though
     
-    CMP.B   #%01000100,D1
+    * CMP.B   #%01000100,D1                   * For NEG, I don't think it works
     
     CMP.W   #%0100111010,D1
     BEQ     DECODE_JSR
     
+    JSR CHECK_LEA                           
     
 	RTS
    
@@ -164,8 +168,32 @@ DECODE_E
     
 	RTS
 	
+	
+CHECK_LEA
+    MOVE.W  D3,D1
+    LSL     #4,D1
+    LSR     #8,D1
+    LSR     #5,D1
+    CMP.B   #%111,D1
+    BEQ     DECODE_LEA
+    RTS
+    
 CHECK_NEG
 
+
+DECODE_LEA
+    MOVE.L  #buffer,A1
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #'E',(A1)+
+    MOVE.B  #'A',(A1)+
+    MOVE.B  #' ',(A1)+
+    JSR     GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR     GET_DESTINATION_ADDREG
+    MOVE.B  #' ',(A1)+    
+    JSR     PRINT
+    RTS
+    
 DECODE_NOP
     MOVE.L  #buffer,A1
     MOVE.B  #'N',(A1)+
@@ -191,6 +219,7 @@ DECODE_JSR
     MOVE.B  #'R',(A1)+
     MOVE.B  #' ',(A1)+
     JSR     GETSOURCE
+    MOVE.B  #' ',(A1)+    
     JSR     PRINT
     RTS
 
@@ -368,7 +397,6 @@ PRINT_EA_ALA_REG:
     MOVE.B  #')',(A1)+
     MOVE.B  #'.',(A1)+
     MOVE.B  #'L',(A1)+
-    MOVE.B  #' ',(A1)+
     RTS
         
 PRINT_EA_ID_REG:
@@ -410,15 +438,11 @@ PRINT_EA_ID_REG_L:
     RTS
     
 PRINT_EA_DRD
-    LEA DRD_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    MOVE.B  #'D',(A1)+
     RTS
     
 PRINT_EA_ARD
-    LEA ARD_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
+    MOVE.B  #'A',(A1)+
     RTS
     
 PRINT_EA_ARI
