@@ -13,29 +13,15 @@ START:                  ; first instruction of program
 
     LEA STACK, SP           *Get the stak pointer
     LEA $8000,A5
-    NEG.B   D1
-    NEG.W   D4
-    NEG.L   D6
-    ORI.B   #$FF,D6
-    ORI.W   #$A134,D3
-    ORI.L   #$1435DCDA,D4
-    CMPI.B  #$AA,D2
-    CMPI.W  #$B432,D3
-    CMPI.L  #$ABCD1234,D7
-    LEA $102C,A4            ; EACH TIME WE DO A NEW COMMAND NEED TO UPDATE
-    MOVE.W  #%0100111001110101,(A4)+    * RTS it works 
-    MOVE.W  #%0100111001110001,(A4)+    * NOP it works 
-    MOVE.W  #%0100111010010001,(A4)+    * JSR (A1) it works
-    MOVE.W  #%0100111010111000,(A4)+    * JSR (ABCD).W works fine
-    MOVE.W  #$ABCD,(A4)+          
-    MOVE.W  #%0100111010111001,(A4)+    * JSR (1234ABCD).L ; works fine
-    MOVE.L  #$1234ABCD,(A4)+          
-    MOVE.W  #%0100111111010011,(A4)+    * LEA (A3),A7
+
     *MOVEA.W (A1),A6
     * ADD.L   A6,D1
-    LEA $100A,A4
+    
+    
+    LEA $4000,A4
     JMP TEST
-    ORG     $5000
+    
+
 TEST:
     CLR.L      D1
     MOVE.W  (A4)+,D3
@@ -109,33 +95,38 @@ DECODE_OPCODE
     CMP.W   #$F,D1          
     BEQ     data_error      * None of the required opcodes start with 1111 so throw error
     
-DECODE_0      *ORI, CMPI, BCLEAR
+DECODE_0      *ORI: DONE, CMPI:DONE , BCLEAR (DYNAMIC and STATIC:DONE)
     MOVE.L  D3,D1
     
-    LSL     #4,D1       Shift to be able to find out if it's ORI, CMPI, BCLEAR
+    LSL     #4,D1       Shift to be able to find out if it's ORI or CMPI
     LSR     #8,D1
     LSR     #4,D1
 
     CMP.B   #$0,D1
     BEQ     DECODE_ORI
     
-    CMPI.B  #%1100,D1
+    CMP.B   #$C,D1
     BEQ     DECODE_CMPI
     
-	RTS
+    MOVE.L  D3,D1
+    LSR     #6,D1         Shift to be able to find out if it's BCLR
+    CMP.B   #%0000100010,D1
+    BEQ     DECODE_STATIC_BCLR
+    
+    BRA     data_error
+    
+DECODE_1    *MOVE.B
 
-DECODE_1
+    BRA     data_error
 
-	RTS
+DECODE_2    *MOVE.L, MOVEA.L
 
-DECODE_2    
-
-	RTS
+    BRA     data_error
 
 
-DECODE_3    
+DECODE_3    *MOVE.W, MOVEA.W
  
-	RTS
+    BRA     data_error
 
 
 DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
@@ -159,40 +150,39 @@ DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
     BEQ     DECODE_JSR
     
     JSR CHECK_LEA_OR_MOVEM                           * Should make a check function to check for LEA and MOVEM 
-    
-	RTS
+    RTS
    
 DECODE_5
 
-	RTS
+    BRA     data_error
         
 DECODE_6
 	
-	RTS
+    BRA     data_error
         
           
 DECODE_8
-    RTS
+    BRA     data_error
     
 DECODE_9
     
-	RTS
+    BRA     data_error
 
 DECODE_B
-    RTS
+    BRA     data_error
 
 
 DECODE_C
-    RTS   
+    BRA     data_error
 
 
 DECODE_D
     
-	RTS
+    BRA     data_error
 
 DECODE_E
     
-	RTS
+    BRA     data_error
 	
 CHECK_LEA_OR_MOVEM
     MOVE.W  D3,D1
@@ -204,10 +194,25 @@ CHECK_LEA_OR_MOVEM
     BEQ     DECODE_LEA
     
     
-    ; need to do something where if it doesn't equal movem then send data error
+    BRA     data_error
+    
+    
+DECODE_STATIC_BCLR
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #'R',(A1)+
+
+    JSR GET_WORD_IMMEDIATE    
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
-    
+
 DECODE_CMPI
     MOVE.L  #buffer,A1
     MOVE.B  #'C',(A1)+
@@ -383,23 +388,29 @@ data_error
 GET_DESTINATION_ADDREG:
     MOVE.L #MARD,D6
     JSR PRINT_EA_MODE
-    JSR GETDESTINATIONREG    
+    JSR GETDESTINATIONREG
+    JSR PRINT_EA_REG    
     RTS
 
 GET_DESTINATION_DREG:
     MOVE.L #MDRD,D6
     JSR PRINT_EA_MODE
-    JSR GETDESTINATIONREG    
+    JSR GETDESTINATIONREG
+    JSR PRINT_EA_REG    
     RTS
     
 GETSOURCE:
     JSR GETSOURCEMODE
+    JSR PRINT_EA_MODE
     JSR GETSOURCEREG
+    JSR PRINT_EA_REG
     RTS
 
 GETDESTINATION:
     JSR GETDESTINATIONMODE
+    JSR PRINT_EA_MODE
     JSR GETDESTINATIONREG
+    JSR PRINT_EA_REG
     RTS
     
 GETDESTINATIONREG:    
@@ -408,7 +419,7 @@ GETDESTINATIONREG:
     LSR #8,D1                   ; Put back into place
     LSR #5,D1                   ; Remove excess so now it's 010
     MOVE.B D1,D7
-    JMP PRINT_EA_REG
+    RTS
     
 GETDESTINATIONMODE:
     MOVE.L D3,D1                ; this is for detecting the mode
@@ -416,11 +427,7 @@ GETDESTINATIONMODE:
     LSR #8,D1                   ; Put back into place
     LSR #5,D1                   ; Remove excess so now it's 000
     MOVE.B D1,D6
-    JMP PRINT_EA_MODE
-
-RETURNDESTMODE:
-    LEA (A3),A0                   ; return to where we are in the op code
-    JMP PRINT_EA_REG
+    RTS
     
 
 GETSOURCEMODE:    
@@ -430,7 +437,7 @@ GETSOURCEMODE:
     LSR #8,D1                   ; Put back into place
     LSR #5,D1                   ; Remove register
     MOVE.B D1,D6                ; store in D6 to be used for display
-    JMP PRINT_EA_MODE
+    RTS
     
 GETSOURCEREG:
     MOVE.L D3,D1                ; this is for detecting the register
@@ -439,8 +446,8 @@ GETSOURCEREG:
     LSR #8,D1                   ; Put back into place
     LSR #5,D1                   ; Remove excess 
     MOVE.B D1,D7                ; store in D7 to be used for display
-    JMP PRINT_EA_REG
-        
+    RTS
+            
 
 PRINT_EA_MODE:
     CMP.B #MDRD,D6  
