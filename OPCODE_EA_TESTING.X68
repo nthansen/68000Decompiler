@@ -14,10 +14,6 @@ START:                  ; first instruction of program
     LEA STACK, SP           *Get the stak pointer
     LEA $8000,A5
 
-    *MOVEA.W (A1),A6
-    * ADD.L   A6,D1
-    
-    
     LEA $4000,A4
     JMP TEST
     
@@ -56,7 +52,7 @@ LET_TO_ASCII
         
 SETUP_VALUES:
     MOVE.W      D3,D1                   * For first four values
-    LSR.L       #8,D1                       *Shift 12 bits to the right 
+    LSR.L       #8,D1                   * Shift 12 bits to the right 
     LSR.L       #4,D1
     RTS
 
@@ -187,7 +183,13 @@ DECODE_6    * Bcc, BRA
     BRA     data_error
         
           
-DECODE_8    * DIVS,OR
+DECODE_8    * DIVU: DONE, DIVS: DONE,OR
+    JSR     GETDESTINATIONMODE
+    CMP.B   #3,D6
+    BEQ     DECODE_DIVU
+    CMP.B   #7,D6
+    BEQ     DECODE_DIVS
+    
     BRA     data_error
     
 DECODE_9    * SUB
@@ -198,27 +200,31 @@ DECODE_B    * EOR,CMP
     BRA     data_error
 
 
-DECODE_C    * MULS
+DECODE_C    * MULS: DONE
+    JSR GETDESTINATIONMODE
+    CMP.B   #7,D6
+    BEQ     DECODE_MULS
+    
     BRA     data_error
 
 
 DECODE_D    * ADD: DONE, ADDA: DONE
     JSR GETDESTINATIONMODE
-    CMP.B   #$0,D6
+    CMP.B   #0,D6
     BEQ     DECODE_ADD_EA_DN_B
-    CMP.B   #$1,D6
+    CMP.B   #1,D6
     BEQ     DECODE_ADD_EA_DN_W
-    CMP.B   #$2,D6
+    CMP.B   #2,D6
     BEQ     DECODE_ADD_EA_DN_L 
-    CMP.B   #$3,D6
+    CMP.B   #3,D6
     BEQ     DECODE_ADDA_W
-    CMP.B   #$4,D6
+    CMP.B   #4,D6
     BEQ     DECODE_ADD_DN_EA_B
-    CMP.B   #$5,D6
+    CMP.B   #5,D6
     BEQ     DECODE_ADD_DN_EA_W
-    CMP.B   #$6,D6
+    CMP.B   #6,D6
     BEQ     DECODE_ADD_DN_EA_L
-    CMP.B   #$7,D6
+    CMP.B   #7,D6
     BEQ     DECODE_ADDA_L
     
     BRA     data_error
@@ -705,6 +711,61 @@ CHECK_LEA_OR_MOVEM
     
     BRA     data_error
     
+DECODE_DIVU
+    MOVE.L  #buffer,A1
+    MOVE.B #'D',(A1)+
+    MOVE.B #'I',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_DIVS
+    MOVE.L  #buffer,A1
+    MOVE.B #'D',(A1)+
+    MOVE.B #'I',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_MULS
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+
 DECODE_DYNAMIC_BCLR
     MOVE.L  #buffer,A1
     MOVE.B  #'B',(A1)+
@@ -1113,7 +1174,7 @@ PRINT_EA_REG:
     BEQ     PRINT_EA_ARI_REG
     CMP.B   #MARIP,D6               ; If the mode is a (An)+ we need to print the reg value and )+
     BEQ     PRINT_EA_ARIP_REG           
-    CMP.B   #MARIM,D6               ; If the mode is a -(SP) we need to print the reg value and )
+    CMP.B   #MARIM,D6               ; If the mode is a -(An) we need to print the reg value and )
     BEQ     PRINT_EA_ARI_REG
     CMP.B   #RAWA,D7                ; The reg is a .w so we need to print the address and ).W
     BEQ     PRINT_EA_AWA_REG
@@ -1131,6 +1192,8 @@ PRINT_EA_REG_END:
     BEQ     PRINT_EA_ARI_REG_END
     CMP.B   #MARIP,D6               ; If the mode is a (An)+ we need to print the reg value and )+
     BEQ     PRINT_EA_ARIP_REG_END 
+    CMP.B   #MARIM,D6               ; If the mode is a -(An) we need to print the reg value and )
+    BEQ     PRINT_EA_ARI_REG_END
     RTS          
 
 DONE_PRINTING:
@@ -1145,18 +1208,15 @@ PRINT_EA_ARI_REG:
    JMP PRINT_EA_REG_VALUE
                
 PRINT_EA_ARIP_REG:
-    MOVE.B  #')',(A1)+
-    MOVE.B  #'+',(A1)+
-    RTS   
+   JMP PRINT_EA_REG_VALUE 
    
 PRINT_EA_ARI_REG_END:
     MOVE.B  #')',(A1)+
     RTS
     
 PRINT_EA_ARIP_REG_END:
-    LEA ARIP_END_TEXT,A1
-    MOVE.B  #14,D0
-    TRAP #15
+    MOVE.B  #')',(A1)+
+    MOVE.B  #'+',(A1)+
     RTS
     
 PRINT_EA_AWA_REG:
@@ -1220,15 +1280,14 @@ PRINT_EA_ARI
     RTS
     
 PRINT_EA_ARIP
-    LEA ARIP_TEXT,A1
-    MOVE.B  #14,D0
-    TRAP #15
+    MOVE.B #'(',(A1)+
+    MOVE.B #'A',(A1)+
     RTS
     
 PRINT_EA_ARIM
-    LEA ARIM_TEXT,A1
-    MOVE.B  #14,D0
-    TRAP #15
+    MOVE.B #'-',(A1)+
+    MOVE.B #'(',(A1)+
+    MOVE.B #'A',(A1)+
     RTS
     
 PRINT_EA_ID
