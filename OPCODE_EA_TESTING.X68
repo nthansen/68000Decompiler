@@ -202,12 +202,132 @@ DECODE_C    * MULS
     BRA     data_error
 
 
-DECODE_D    * ADD, ADDA
+DECODE_D    * ADD: DONE, ADDA: DONE
+    JSR GETDESTINATIONMODE
+    CMP.B   #$0,D6
+    BEQ     DECODE_ADD_EA_DN_B
+    CMP.B   #$1,D6
+    BEQ     DECODE_ADD_EA_DN_W
+    CMP.B   #$2,D6
+    BEQ     DECODE_ADD_EA_DN_L 
+    CMP.B   #$3,D6
+    BEQ     DECODE_ADDA_W
+    CMP.B   #$4,D6
+    BEQ     DECODE_ADD_DN_EA_B
+    CMP.B   #$5,D6
+    BEQ     DECODE_ADD_DN_EA_W
+    CMP.B   #$6,D6
+    BEQ     DECODE_ADD_DN_EA_L
+    CMP.B   #$7,D6
+    BEQ     DECODE_ADDA_L
     
     BRA     data_error
 
 DECODE_E    * LSL: DONE, LSR: DONE, ASL: DONE, ASR: DONE, ROL: DONE, ROR: DONE    
     BRA CHECK_TYPE_ROTATE
+    
+DECODE_ADD_EA_DN_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+
+DECODE_ADD_EA_DN_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_ADD_EA_DN_L 
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_ADDA_W
+
+    RTS
+
+DECODE_ADD_DN_EA_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_ADD_DN_EA_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_ADD_DN_EA_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_ADDA_L
+    
+	RTS
 	
 CHECK_TYPE_ROTATE
     JSR GETDESTINATIONMODE        ; GET THE THREE BITS NECESSARY TO DETECT ASd,LSd,ROd
@@ -1251,6 +1371,7 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
 
 
 
