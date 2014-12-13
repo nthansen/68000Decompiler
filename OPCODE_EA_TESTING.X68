@@ -206,10 +206,145 @@ DECODE_D    * ADD, ADDA
     
     BRA     data_error
 
-DECODE_E    * LSL, LSR, ASL, ASR, ROL, ROR
-    
-    BRA     data_error
+DECODE_E    * LSL, LSR, ASL, ASR, ROL, ROR    
+    BRA CHECK_TYPE_ROTATE
 	
+CHECK_TYPE_ROTATE
+    JSR GETDESTINATIONMODE        ; GET THE THREE BITS NECESSARY TO DETECT ASd,LSd,ROd
+    CMP.B   #7,D6
+    BEQ CHECK_MEMORY_ROTATE_L     ; MEMORY ROTATE LEFT IS 111 in bits still need to find type
+    CMP.B #3,D6
+    BEQ CHECK_MEMORY_ROTATE_R     ; MEMORY ROTATE RIGHT IS 011 in bits still need to find type
+    JSR GETSOURCEMODE             ; We know it's not a memory rotate so check register rotate
+    CMP.B   #7,D6
+    BEQ DECODE_REGISTER_RO_REG      ; Know it's a register RO rotate still need to find direction
+    CMP.B   #3,D6
+    BEQ DECODE_REGISTER_RO_COUNT    ; still need to find direction
+    CMP.B   #4,D6
+    BEQ DECODE_REGISTER_AS_REG
+    CMP.B   #0,D6
+    BEQ DECODE_REGISTER_AS_COUNT
+    CMP.B   #5,D6
+    BEQ DECODE_REGISTER_LS_REG
+    CMP.B   #1,D6
+    BEQ DECODE_REGISTER_LS_COUNT
+    BRA data_error
+
+CHECK_MEMORY_ROTATE_L            ; for when bits 8 7 6 = 111
+    JSR GETDESTINATIONREG
+    CMP.B   #0,D7
+    BEQ DECODE_MEMORY_ASL
+    CMP.B   #1,D7
+    BEQ DECODE_MEMORY_LSL
+    CMP.B   #3,D7
+    BEQ DECODE_MEMORY_ROL
+    BRA data_error    
+
+CHECK_MEMORY_ROTATE_R         ; for when bits 8 7 6 = 011
+    JSR GETDESTINATIONREG
+    CMP.B   #0,D7
+    BEQ DECODE_MEMORY_ASR
+    CMP.B   #1,D7
+    BEQ DECODE_MEMORY_LSR
+    CMP.B   #3,D7
+    BEQ DECODE_MEMORY_ROR
+    BRA data_error
+    
+DECODE_REGISTER_RO_REG      ; Know it's a register RO rotate still need to find direction
+
+    RTS
+    
+DECODE_REGISTER_RO_COUNT    ; still need to find direction
+
+    RTS
+    
+DECODE_REGISTER_AS_REG
+
+    RTS
+    
+DECODE_REGISTER_AS_COUNT
+
+    RTS
+
+DECODE_REGISTER_LS_REG
+
+    RTS
+    
+DECODE_REGISTER_LS_COUNT
+
+    RTS
+
+DECODE_MEMORY_ASL
+
+    RTS
+    
+DECODE_MEMORY_ASR
+    
+    RTS
+    
+DECODE_MEMORY_LSL
+    
+    RTS
+    
+DECODE_MEMORY_LSR
+    
+    RTS
+    
+DECODE_MEMORY_ROL
+
+    RTS
+    
+DECODE_MEMORY_ROR
+
+    RTS
+    
+DECODE_REGISTER_ASL_REG
+
+    RTS
+
+DECODE_REGISTER_ASL_COUNT
+
+    RTS
+    
+DECODE_REGISTER_ASR_REG
+    
+    RTS
+
+DECODE_REGISTER_ASR_COUNT
+
+    RTS
+    
+DECODE_REGISTER_LSL_REG
+    
+    RTS
+
+DECODE_REGISTER_LSL_COUNT
+    RTS
+    
+DECODE_REGISTER_LSR_REG
+    
+    RTS
+
+DECODE_REGISTER_LSR_COUNT
+
+    RTS
+    
+DECODE_REGISTER_ROL_REG
+
+    RTS
+
+DECODE_REGISTER_ROL_COUNT
+
+    RTS
+    
+DECODE_REGISTER_ROR_REG
+
+    RTS
+
+DECODE_REGISTER_ROR_COUNT
+
+    RTS    
+
 CHECK_LEA_OR_MOVEM
     MOVE.W  D3,D1
     LSL     #4,D1
@@ -847,6 +982,7 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
 
 
 
