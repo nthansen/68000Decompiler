@@ -60,11 +60,21 @@ START:                  ; first instruction of program
     MOVEA.L #$FFFFA134,A4
     MOVEA.L #$A34,A4    
     
+    ASL (A1)
+    ASR (A1)
+
+    LSL (A1)
+    LSR (A1)
+    
+    ROL (A1)
+    ROR (A1)
+    
     SIMHALT             ; halt simulator
 
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 
 

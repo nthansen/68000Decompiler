@@ -251,98 +251,189 @@ CHECK_MEMORY_ROTATE_R         ; for when bits 8 7 6 = 011
     BRA data_error
     
 DECODE_REGISTER_RO_REG      ; Know it's a register RO rotate still need to find direction
-
+    JSR GETDESTINATIONMODE
+    LSR #2,D6
+    CMP.B #0,D6
+    BEQ DECODE_REGISTER_ROR_REG
+    BGT DECODE_REGISTER_ROL_REG
     RTS
     
 DECODE_REGISTER_RO_COUNT    ; still need to find direction
-
+    JSR GETDESTINATIONMODE
+    LSR #2,D6
+    CMP.B #0,D6
+    BEQ DECODE_REGISTER_ROR_COUNT
+    BGT DECODE_REGISTER_ROL_COUNT
     RTS
     
 DECODE_REGISTER_AS_REG
-
+    JSR GETDESTINATIONMODE
+    LSR #2,D6
+    CMP.B #0,D6
+    BEQ DECODE_REGISTER_ASR_REG
+    BGT DECODE_REGISTER_ASL_REG
     RTS
     
 DECODE_REGISTER_AS_COUNT
-
+    JSR GETDESTINATIONMODE
+    LSR #2,D6
+    CMP.B #0,D6
+    BEQ DECODE_REGISTER_ASR_COUNT
+    BGT DECODE_REGISTER_ASL_COUNT
     RTS
 
 DECODE_REGISTER_LS_REG
-
+    JSR GETDESTINATIONMODE
+    LSR #2,D6
+    CMP.B #0,D6
+    BEQ DECODE_REGISTER_LSR_REG
+    BGT DECODE_REGISTER_LSL_REG
     RTS
     
 DECODE_REGISTER_LS_COUNT
-
+    JSR GETDESTINATIONMODE
+    LSR #2,D6
+    CMP.B #0,D6
+    BEQ DECODE_REGISTER_LSR_COUNT
+    BGT DECODE_REGISTER_LSL_COUNT
     RTS
 
 DECODE_MEMORY_ASL
-
+    MOVE.B #'A',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_MEMORY_ASR
-    
+    MOVE.B #'A',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT    
     RTS
     
 DECODE_MEMORY_LSL
-    
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT    
     RTS
     
 DECODE_MEMORY_LSR
-    
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT    
     RTS
     
 DECODE_MEMORY_ROL
-
+    MOVE.B #'R',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_MEMORY_ROR
-
+    MOVE.B #'R',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_REGISTER_ASL_REG
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
 
 DECODE_REGISTER_ASL_COUNT
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_REGISTER_ASR_REG
-    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT    
     RTS
 
 DECODE_REGISTER_ASR_COUNT
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_REGISTER_LSL_REG
-    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT    
     RTS
 
 DECODE_REGISTER_LSL_COUNT
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_REGISTER_LSR_REG
-    
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT    
     RTS
 
 DECODE_REGISTER_LSR_COUNT
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_REGISTER_ROL_REG
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
 
 DECODE_REGISTER_ROL_COUNT
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
     
 DECODE_REGISTER_ROR_REG
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
 
 DECODE_REGISTER_ROR_COUNT
-
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS    
 
 CHECK_LEA_OR_MOVEM
