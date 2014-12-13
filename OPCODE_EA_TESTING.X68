@@ -206,7 +206,7 @@ DECODE_D    * ADD, ADDA
     
     BRA     data_error
 
-DECODE_E    * LSL, LSR, ASL, ASR, ROL, ROR    
+DECODE_E    * LSL: DONE, LSR: DONE, ASL: DONE, ASR: DONE, ROL: DONE, ROR: DONE    
     BRA CHECK_TYPE_ROTATE
 	
 CHECK_TYPE_ROTATE
@@ -299,6 +299,7 @@ DECODE_REGISTER_LS_COUNT
     RTS
 
 DECODE_MEMORY_ASL
+    MOVE.L  #buffer,A1
     MOVE.B #'A',(A1)+
     MOVE.B #'S',(A1)+
     MOVE.B #'L',(A1)+
@@ -310,6 +311,7 @@ DECODE_MEMORY_ASL
     RTS
     
 DECODE_MEMORY_ASR
+    MOVE.L  #buffer,A1
     MOVE.B #'A',(A1)+
     MOVE.B #'S',(A1)+
     MOVE.B #'R',(A1)+
@@ -321,6 +323,7 @@ DECODE_MEMORY_ASR
     RTS
     
 DECODE_MEMORY_LSL
+    MOVE.L  #buffer,A1
     MOVE.B #'L',(A1)+
     MOVE.B #'S',(A1)+
     MOVE.B #'L',(A1)+
@@ -332,6 +335,7 @@ DECODE_MEMORY_LSL
     RTS
     
 DECODE_MEMORY_LSR
+    MOVE.L  #buffer,A1
     MOVE.B #'L',(A1)+
     MOVE.B #'S',(A1)+
     MOVE.B #'R',(A1)+
@@ -343,6 +347,7 @@ DECODE_MEMORY_LSR
     RTS
     
 DECODE_MEMORY_ROL
+    MOVE.L  #buffer,A1
     MOVE.B #'R',(A1)+
     MOVE.B #'O',(A1)+
     MOVE.B #'L',(A1)+
@@ -354,6 +359,7 @@ DECODE_MEMORY_ROL
     RTS
     
 DECODE_MEMORY_ROR
+    MOVE.L  #buffer,A1
     MOVE.B #'R',(A1)+
     MOVE.B #'O',(A1)+
     MOVE.B #'R',(A1)+
@@ -365,76 +371,208 @@ DECODE_MEMORY_ROR
     RTS
     
 DECODE_REGISTER_ASL_REG
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'L',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
 
 DECODE_REGISTER_ASL_COUNT
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'L',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_COUNT
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
     
 DECODE_REGISTER_ASR_REG
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'R',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
-    JSR PRINT    
+    JSR PRINT
     RTS
 
 DECODE_REGISTER_ASR_COUNT
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'R',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_COUNT
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
     
 DECODE_REGISTER_LSL_REG
+    MOVE.L  #buffer,A1
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'L',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
-    JSR PRINT    
+    JSR PRINT
     RTS
 
 DECODE_REGISTER_LSL_COUNT
+    MOVE.L  #buffer,A1
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'L',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_COUNT
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
     
 DECODE_REGISTER_LSR_REG
+    MOVE.L  #buffer,A1
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'R',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
-    JSR PRINT    
+    JSR PRINT
     RTS
 
 DECODE_REGISTER_LSR_COUNT
+    MOVE.L  #buffer,A1
+    MOVE.B #'L',(A1)+
+    MOVE.B #'S',(A1)+
+    MOVE.B #'R',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_COUNT
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
     
 DECODE_REGISTER_ROL_REG
+    MOVE.L  #buffer,A1
+    MOVE.B #'R',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'L',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
 
 DECODE_REGISTER_ROL_COUNT
+    MOVE.L  #buffer,A1
+    MOVE.B #'R',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'L',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_COUNT
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
     
 DECODE_REGISTER_ROR_REG
+    MOVE.L  #buffer,A1
+    MOVE.B #'R',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_DESTINATION_DREG    
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
 
 DECODE_REGISTER_ROR_COUNT
+    MOVE.L  #buffer,A1
+    MOVE.B #'R',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    JSR GET_SHIFT_SIZE
+    CLR.L   D2          ; TO LET SIZE KNOW NOT TO GRAB IMMEDIATE DATA
+    JSR GET_SIZE
+    MOVE.B  #' ',(A1)+
+    JSR GET_COUNT
+    MOVE.B  #',',(A1)+
+    JSR GET_SOURCE_DREG
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
-    RTS    
+    RTS
 
 CHECK_LEA_OR_MOVEM
     MOVE.W  D3,D1
@@ -663,6 +801,13 @@ DECODE_JSR
     JSR     PRINT
     RTS
 
+GET_SHIFT_SIZE
+    JSR GETDESTINATIONMODE
+    LSL.B #6,D6
+    LSR.B #6,D6
+    MOVE.B  D6,D1
+    RTS
+
  * Expects byte to be 00 Word 01 Long 10 in D1
 GET_SIZE 
     CMP.B   #%00,D1
@@ -740,6 +885,39 @@ GET_DESTINATION_DREG:
     MOVE.L #MDRD,D6
     JSR PRINT_EA_MODE
     JSR GETDESTINATIONREG
+    JSR PRINT_EA_REG    
+    RTS
+    
+GET_COUNT
+    MOVE.B #'#',(A1)+
+    MOVE.L #MDRD,D6
+    JSR GETDESTINATIONREG
+    CMP.B #0,D7
+    BEQ PRINT_COUNT_ZERO_FIX
+    BGT PRINT_COUNT
+    
+PRINT_COUNT_ZERO_FIX
+    MOVE.L #$08,D7
+    JSR HEX_TO_CHAR
+    MOVE.B  D7,(A1)+
+    RTS
+
+PRINT_COUNT
+    JSR HEX_TO_CHAR
+    MOVE.B  D7,(A1)+
+    RTS
+    
+GET_SOURCE_ADDREG:
+    MOVE.L #MARD,D6
+    JSR PRINT_EA_MODE
+    JSR GETSOURCEREG
+    JSR PRINT_EA_REG    
+    RTS
+
+GET_SOURCE_DREG:
+    MOVE.L #MDRD,D6
+    JSR PRINT_EA_MODE
+    JSR GETSOURCEREG
     JSR PRINT_EA_REG    
     RTS
     
