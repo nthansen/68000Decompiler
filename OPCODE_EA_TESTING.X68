@@ -95,7 +95,7 @@ DECODE_OPCODE
     CMP.W   #$F,D1          
     BEQ     data_error      * None of the required opcodes start with 1111 so throw error
     
-DECODE_0      *ORI: DONE, CMPI:DONE , BCLEAR (DYNAMIC and STATIC:DONE)
+DECODE_0      *ORI: DONE, CMPI:DONE , BCLEAR (DYNAMIC:DONE and STATIC:DONE)
     MOVE.L  D3,D1
     
     LSL     #4,D1       Shift to be able to find out if it's ORI or CMPI
@@ -109,9 +109,13 @@ DECODE_0      *ORI: DONE, CMPI:DONE , BCLEAR (DYNAMIC and STATIC:DONE)
     BEQ     DECODE_CMPI
     
     MOVE.L  D3,D1
-    LSR     #6,D1         Shift to be able to find out if it's BCLR
+    LSR     #6,D1         Shift to be able to find out if it's BCLR STATIC
     CMP.B   #%0000100010,D1
     BEQ     DECODE_STATIC_BCLR
+    
+    JSR GETDESTINATIONMODE
+    CMP.B   #6,D6       
+    BEQ     DECODE_DYNAMIC_BCLR
     
     BRA     data_error
     
@@ -130,26 +134,26 @@ DECODE_3    *MOVE.W, MOVEA.W
 
 
 DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
-    CMP.W   #$4E71,D3                       * NOP
+    CMP.W   #$4E71,D3           * NOP
     BEQ     DECODE_NOP
 
-    CMP.W   #$4E75,D3                       * RTS
+    CMP.W   #$4E75,D3           * RTS
     BEQ     DECODE_RTS
         
         
-    MOVE.L  D3,D1                           * NEG
-    LSR.L   #8,D1                           * Shift so we can check with NED
+    MOVE.L  D3,D1               * NEG
+    LSR.L   #8,D1               * Shift so we can check with NED
 
-    CMP.B   #%01000100,D1                   * For NEG
+    CMP.B   #%01000100,D1       * For NEG
     BEQ     DECODE_NEG
     
-    MOVE.L  D3,D1                           * JSR check
-    LSR.L   #6,D1                           * Shift
+    MOVE.L  D3,D1               * JSR check
+    LSR.L   #6,D1               * Shift
 
     CMP.W   #%0100111010,D1
     BEQ     DECODE_JSR
     
-    JSR CHECK_LEA_OR_MOVEM                           * Should make a check function to check for LEA and MOVEM 
+    JSR CHECK_LEA_OR_MOVEM      * Should make a check function to check for LEA and MOVEM 
     RTS
    
 DECODE_5
@@ -193,9 +197,23 @@ CHECK_LEA_OR_MOVEM
     CMP.B   #%111,D1
     BEQ     DECODE_LEA
     
-    
     BRA     data_error
     
+DECODE_DYNAMIC_BCLR
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #'R',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    JSR GET_DESTINATION_DREG    
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS     
     
 DECODE_STATIC_BCLR
     MOVE.L  #buffer,A1

@@ -31,8 +31,10 @@ START:                  ; first instruction of program
     
     LEA (A3),A7
     
-    BCLR #$5,D1
-    BCLR #$8,(A4)
+    BCLR #$5,D1             ; Static
+    BCLR #$8,(A4)           ; Static
+    
+    BCLR D6,(A7)            ; Dynamic
     
     SIMHALT             ; halt simulator
 
