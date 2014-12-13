@@ -125,10 +125,20 @@ START:                  ; first instruction of program
     ADD.W   (A2),D2
     ADD.L   (A3),D3
 
+    ADDA.W   A4,A2
+    ADDA.L   -(A1),A3
+    ADDA.W   D2,A2
+    ADDA.L   D3,A3
+    
     MULS.W  D1,D7
     MULS.W  (A3),D4
     MULS.W  (A5)+,D2
     MULS.W  -(A0),D6
+    
+    MULU.W  D1,D7
+    MULU.W  (A3),D4
+    MULU.W  (A5)+,D2
+    MULU.W  -(A0),D6
     
     DIVS.W  D1,D7
     DIVS.W  (A3),D4
@@ -139,6 +149,15 @@ START:                  ; first instruction of program
     DIVU.W  (A3),D4
     DIVU.W  (A5)+,D2
     DIVU.W  -(A0),D6
+    
+    OR.B   D1,(A1)
+    OR.W   D2,(A2)
+    OR.L   D3,(A3)
+    
+    OR.B   (A1),D1
+    OR.W   (A2),D2
+    OR.L   (A3),D3
+
 
     
     SIMHALT             ; halt simulator
@@ -146,6 +165,8 @@ START:                  ; first instruction of program
 * Put variables and constants here
 
     END    START        ; last line of source
+
+
 
 
 

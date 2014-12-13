@@ -185,8 +185,20 @@ DECODE_6    * Bcc, BRA
           
 DECODE_8    * DIVU: DONE, DIVS: DONE,OR
     JSR     GETDESTINATIONMODE
+    CMP.B   #0,D6
+    BEQ     DECODE_OR_EA_DN_B
+    CMP.B   #1,D6
+    BEQ     DECODE_OR_EA_DN_W
+    CMP.B   #2,D6
+    BEQ     DECODE_OR_EA_DN_L
     CMP.B   #3,D6
     BEQ     DECODE_DIVU
+    CMP.B   #4,D6
+    BEQ     DECODE_OR_DN_EA_B
+    CMP.B   #5,D6
+    BEQ     DECODE_OR_DN_EA_W
+    CMP.B   #6,D6
+    BEQ     DECODE_OR_DN_EA_L
     CMP.B   #7,D6
     BEQ     DECODE_DIVS
     
@@ -200,15 +212,16 @@ DECODE_B    * EOR,CMP
     BRA     data_error
 
 
-DECODE_C    * MULS: DONE
+DECODE_C    * MULU: DONE MULS: DONE
     JSR GETDESTINATIONMODE
+    CMP.B   #3,D6
+    BEQ     DECODE_MULU
     CMP.B   #7,D6
     BEQ     DECODE_MULS
-    
     BRA     data_error
 
 
-DECODE_D    * ADD: DONE, ADDA: DONE
+DECODE_D    * ADD: DONE, ADDA
     JSR GETDESTINATIONMODE
     CMP.B   #0,D6
     BEQ     DECODE_ADD_EA_DN_B
@@ -280,7 +293,20 @@ DECODE_ADD_EA_DN_L
     RTS
 
 DECODE_ADDA_W
-
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'A',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_ADDREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
     RTS
 
 DECODE_ADD_DN_EA_B
@@ -332,9 +358,112 @@ DECODE_ADD_DN_EA_L
     RTS
     
 DECODE_ADDA_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'A',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'D',(A1)+
+    MOVE.B #'A',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_ADDREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_OR_EA_DN_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_OR_EA_DN_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_OR_EA_DN_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_OR_DN_EA_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_OR_DN_EA_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_OR_DN_EA_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
     
-	RTS
-	
 CHECK_TYPE_ROTATE
     JSR GETDESTINATIONMODE        ; GET THE THREE BITS NECESSARY TO DETECT ASd,LSd,ROd
     CMP.B   #7,D6
@@ -735,6 +864,24 @@ DECODE_DIVS
     MOVE.B #'I',(A1)+
     MOVE.B #'V',(A1)+
     MOVE.B #'S',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_MULU
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #'U',(A1)+
     MOVE.B #'.',(A1)+
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
