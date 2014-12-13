@@ -119,9 +119,26 @@ DECODE_0      *ORI: DONE, CMPI:DONE , BCLEAR (DYNAMIC:DONE and STATIC:DONE)
     
     BRA     data_error
     
-DECODE_1    *MOVE.B
+DECODE_1    *MOVE.B; DONE
 
-    BRA     data_error
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+
+    
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GETDESTINATION
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS  
+    
 
 DECODE_2    *MOVE.L, MOVEA.L
 
@@ -747,6 +764,7 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
 
 
 

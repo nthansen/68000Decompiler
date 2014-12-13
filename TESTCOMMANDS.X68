@@ -36,11 +36,14 @@ START:                  ; first instruction of program
     
     BCLR D6,(A7)            ; Dynamic
     
+    MOVE.B  D4,D3
+    
     SIMHALT             ; halt simulator
 
 * Put variables and constants here
 
     END    START        ; last line of source
+
 
 
 *~Font name~Courier New~
