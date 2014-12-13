@@ -130,7 +130,7 @@ DECODE_1    *MOVE.B; DONE
     MOVE.B #'B',(A1)+
     MOVE.B #' ',(A1)+
 
-    
+    MOVE.B #0,D4                ; Set to zero so if it's immediate code it knows to grab a byte
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GETDESTINATION
@@ -140,15 +140,20 @@ DECODE_1    *MOVE.B; DONE
     RTS  
     
 
-DECODE_2    *MOVE.L, MOVEA.L
+DECODE_2    *MOVE.L: DONE, MOVEA.L:DONE COULD BE DONE MORE EFFICIENTLY THOUGH
 
-    BRA     data_error
-
-
-DECODE_3    *MOVE.W, MOVEA.W
+    JSR     GETDESTINATIONMODE
+    CMP.B   #$1,D6              
+    BEQ     DECODE_MOVEA_L           ; If the mode equals 001 then we know it's MOVEA otherwise its just move
+    BRA     DECODE_MOVE_L
  
-    BRA     data_error
 
+DECODE_3    *MOVE.W: DONE, MOVEA.W: DONE COULD BE DONE MORE EFFICIENTLY THOUGH
+ 
+    JSR     GETDESTINATIONMODE
+    CMP.B   #$1,D6              
+    BEQ     DECODE_MOVEA_W           ; If the mode equals 001 then we know it's MOVEA otherwise its just move
+    BRA     DECODE_MOVE_W
 
 DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
     CMP.W   #$4E71,D3           * NOP
@@ -173,35 +178,35 @@ DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
     JSR CHECK_LEA_OR_MOVEM      * Should make a check function to check for LEA and MOVEM 
     RTS
    
-DECODE_5
+DECODE_5    * SUBQ
 
     BRA     data_error
         
-DECODE_6
+DECODE_6    * Bcc, BRA
 	
     BRA     data_error
         
           
-DECODE_8
+DECODE_8    * DIVS,OR
     BRA     data_error
     
-DECODE_9
-    
-    BRA     data_error
-
-DECODE_B
-    BRA     data_error
-
-
-DECODE_C
-    BRA     data_error
-
-
-DECODE_D
+DECODE_9    * SUB
     
     BRA     data_error
 
-DECODE_E
+DECODE_B    * EOR,CMP
+    BRA     data_error
+
+
+DECODE_C    * MULS
+    BRA     data_error
+
+
+DECODE_D    * ADD, ADDA
+    
+    BRA     data_error
+
+DECODE_E    * LSL, LSR, ASL, ASR, ROL, ROR
     
     BRA     data_error
 	
@@ -288,6 +293,84 @@ DECODE_ORI
     MOVE.B  #LF,(A1)+
     JSR     PRINT
     RTS    
+
+DECODE_MOVE_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+
+    MOVE.B  #2,D4       ; Set to 3 so if it's immediate code it knows to grab a word
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GETDESTINATION
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_MOVEA_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'A',(A1)+    
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+
+    MOVE.B  #2,D4     ; Set to zero so if it's immediate code it knows to grab a word
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_ADDREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS  
+    
+DECODE_MOVE_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+
+    MOVE.B  #3,D4       ; Set to 3 so if it's immediate code it knows to grab a long
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GETDESTINATION
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_MOVEA_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'A',(A1)+    
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+
+    MOVE.B  #3,D4     ; Set to zero so if it's immediate code it knows to grab a long
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_ADDREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS  
 
 DECODE_NEG
     MOVE.L  #buffer,A1
@@ -495,7 +578,7 @@ PRINT_EA_MODE:
     BEQ PRINT_EA_ARIP               ; Prints out (A
     CMP.B #MARIM,D6
     BEQ PRINT_EA_ARIM               ; Prints out -(A
-    CMP.B #MAWA,D6
+    RTS
 
 PRINT_EA_REG:
     CMP.B   #MDRD,D6                ; If the mode is a Dn then we just print the value in the register
@@ -574,7 +657,7 @@ PRINT_EA_ALA_REG:
         
 PRINT_EA_ID_REG:
     CMP.B   #0,D4
-    BEQ     PRINT_EA_ID_REG_W ; I think it might be a Byte not WORD
+    BEQ     PRINT_EA_ID_REG_B ; I think it might be a Byte not WORD
     CMP.B   #2,D4
     BEQ     PRINT_EA_ID_REG_W
     CMP.B   #3,D4
@@ -764,6 +847,7 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
 
 
 

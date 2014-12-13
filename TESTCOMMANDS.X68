@@ -37,12 +37,38 @@ START:                  ; first instruction of program
     BCLR D6,(A7)            ; Dynamic
     
     MOVE.B  D4,D3
+    MOVE.B  (A3),(A4)
+    MOVE.B  D5,(A1)
+    MOVE.B  #$BC,D1
+    MOVE.B  #$11,(A4)
+    
+    MOVE.W  D4,D3
+    MOVE.W  (A3),(A4)
+    MOVE.W  D5,(A1)
+    MOVE.W #$A134,D6
+    
+    MOVEA.W #$134,A4
+    MOVEA.W #$A134,A4
+    MOVEA.W #$A34,A4 
+    
+    MOVE.L  D4,D3
+    MOVE.L  (A3),(A4)
+    MOVE.L  D5,(A1)
+    MOVE.L #$A134,D6
+    
+    MOVEA.L #$134,A4
+    MOVEA.L #$FFFFA134,A4
+    MOVEA.L #$A34,A4    
     
     SIMHALT             ; halt simulator
 
 * Put variables and constants here
 
     END    START        ; last line of source
+
+
+
+
 
 
 
