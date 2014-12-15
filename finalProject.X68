@@ -2908,6 +2908,7 @@ ENTER               DC.B    CR,LF
                     DC.B    'Please press Enter to continue',CR,LF,0
 START_MSG           DC.B    'This is the disassember made by Group 10 (Norman Hansen, Konstantin Stekhov)',CR,LF
                     DC.B    'Input the starting and ending addresses and the program will run your data',CR,LF
+                    DC.B    'The starting and ending addresses must contain only uppercase HEX characters',CR,LF
                     DC.B    'The starting and ending addresses must be between 7000 and FFFFFE',CR,LF
                     DC.B    CR,LF,0                  
 END_MSG             DC.B    CR,LF
@@ -2958,6 +2959,7 @@ RID       EQU     %100    * #<data>
                      
     END    START        ; last line of source
   
+
 
 
 *~Font name~Courier New~
