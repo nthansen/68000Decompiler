@@ -7,15 +7,9 @@
 WORD    EQU $0BCD
 LONG    EQU $1234ABCD
 
-    ORG    $4000
+    ORG    $7000
 START:                  ; first instruction of program
 
-    MOVEM.W     D1-D4/A1-A6,(A4)
-    MOVEM.W     D0-D7/A0-A7,(A4)
-    MOVEM.W     D2/D1/D5/A3/A1,(A6)
-    MOVEM.W     (A6),D2/D1/D5/A3/A1
-    MOVEM.L     A3/A1/D2/D1/D5,-(A6)
-    MOVEM.L     A6,(A2)
     
     BRA     START
     BCC     START
@@ -91,7 +85,20 @@ START:                  ; first instruction of program
     
     MOVEA.L #$134,A4
     MOVEA.L #$FFFFA134,A4
-    MOVEA.L #$A34,A4    
+    MOVEA.L #$A34,A4   
+
+    MOVEM.L     A3/A1/D2/D1/D5,-(A6)
+    MOVEM.W     D2/D1/D5/A3/A0,(A6)
+    MOVEM.W     D1-D4/A1-A6,(A4)
+    MOVEM.W     D0-D7/A0-A7,(A4)
+    MOVEM.W     D2/D1/D5/A3/A0,(A6)
+    MOVEM.W     (A6),D2/D1/D5/A3/A1
+    MOVEM.L     A6,(A2)
+    
+    MOVEM.W     D2/D1/D5/A3/A0,$6BED
+    MOVEM.L     D2/D1/D5/A3/A0,$01BFED
+    MOVEM.W     $6BED,D2/D1/D5/A3/A0
+    MOVEM.L     $01BFED,D2/D1/D5/A3/A0 
     
     ASL (A1)
     ASR (A1)
@@ -222,6 +229,8 @@ START:                  ; first instruction of program
 * Put variables and constants here
 
     END    START        ; last line of source
+
+
 
 
 

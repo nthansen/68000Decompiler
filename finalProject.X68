@@ -9,13 +9,17 @@ CR      EQU $0D
 LF      EQU $0A  
 BYTE    EQU $1
 STACK   EQU $7000               * Stack address
-BEGIN   EQU $00003000
+BEGIN   EQU $00007000
+MAX     EQU 25
 END     EQU $00FFFFFE   
     
     ORG    $1000
 START:                  ; first instruction of program
-        LEA     STACK, SP           *Get the stak pointer
-        
+        LEA     STACK,SP            *Get the stak pointer
+        MOVE.B  #0,LINE_COUNTER     *Line counter for displaying part of output
+        LEA     START_MSG,A1
+        MOVE.B  #14,D0
+        TRAP    #15
         JSR     GET_START_ADDR
         JSR     CLEAR_ALL
         
@@ -26,10 +30,23 @@ START:                  ; first instruction of program
 DATA_LOOP
         CMP.L   A4,A5
         BEQ     DONE
-        MOVE.W (A4)+,D3 
-        JSR PRINT_CURRENT_ADDR   
-        JSR DECODE_OPCODE
-        BRA DATA_LOOP  
+        MOVE.W  (A4)+,D3 
+        JSR     PRINT_CURRENT_ADDR
+        JSR     DECODE_OPCODE
+        ADD.B   #1,LINE_COUNTER
+        CMP.B   #MAX,LINE_COUNTER
+        BEQ     ASK_ENTER    
+        BRA     DATA_LOOP  
+
+ASK_ENTER
+        MOVE.B  #0,LINE_COUNTER
+        LEA     ENTER, A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     STUFF,A1
+        MOVE.B  #2,D0
+        TRAP    #15
+        BRA     DATA_LOOP
 
 PRINT           
         MOVE.B  #$00,(A1)                 * Terminate the string
@@ -129,23 +146,22 @@ PRINT_CURRENT_ADDR
         LSR.L   #$04,D7
         JSR     HEX_TO_CHAR     *Convert HEX to char         
         MOVE.B  D7,(A1)+ 
-        CLR.L   D7              *Clear D7    
-        MOVE.B  #' ',(A1)+
-        MOVE.B  #' ',(A1)+    
+        CLR.L   D7              *Clear D7  
+        MOVE.B  #' ',(A1)+      
         BRA     PRINT
         RTS
 
 HEX_TO_CHAR                                                                                                   
-        CMP.B   #$9,D7                    *Check if digit                            
-        BLE     DIG_TO_ASCII              *Convert digit                 
-        BRA     LET_TO_ASCII              *Convert letter
+        CMP.B   #$9,D7           *Check if digit                            
+        BLE     DIG_TO_ASCII     *Convert digit                 
+        BRA     LET_TO_ASCII     *Convert letter
                                                                                                     
 DIG_TO_ASCII                                                                                               
-        ADDI.b  #$30,D7                                                                  
+        ADDI.B  #$30,D7          *Converting a digit to ASCII                                                                  
         RTS
                                                                                                               
 LET_TO_ASCII                                                                                            
-        ADDI.B  #$37,D7                                                                   
+        ADDI.B  #$37,D7          *Converting a letter to ASCII                                                         
         RTS
         
 GET_START_ADDR
@@ -188,7 +204,8 @@ GET_ENDING_ADDR
         MOVE.L  D3,A5
         
         JSR     CLEAR_ALL
-        JSR     DATA_LOOP        
+        JSR     DATA_LOOP
+               
         RTS
 
 CONVERT_ONE_CHAR_TO_HEX
@@ -298,7 +315,7 @@ CLEAR_ALL               *This function clears all of the data registers
         CLR.L   D6      *Clear D6
         CLR.L   D7      *Clear D7
         RTS  
-        
+
 SETUP_VALUES:
     MOVE.W      D3,D1                   * For first four values
     LSR.L       #8,D1                   * Shift 12 bits to the right 
@@ -603,6 +620,7 @@ DECODE_MOVEM_REGTOMEM_W
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.W  (A4)+,A2
     JSR DECODE_MOVEM_MASK_PRE_CHECK
     MOVE.B #',',(A1)+
     JSR GETSOURCE
@@ -623,6 +641,7 @@ DECODE_MOVEM_REGTOMEM_L
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.W  (A4)+,A2    
     JSR DECODE_MOVEM_MASK_PRE_CHECK
     MOVE.B #',',(A1)+
     JSR GETSOURCE
@@ -643,7 +662,8 @@ DECODE_MOVEM_MEMTOREG_W
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
-    JSR DECODE_MOVEM_EA_CHECK
+    MOVE.W  (A4)+,A2
+    JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR DECODE_MOVEM_MASK_POST
     MOVE.B  #CR,(A1)+
@@ -663,7 +683,8 @@ DECODE_MOVEM_MEMTOREG_L
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
     
-    JSR DECODE_MOVEM_EA_CHECK
+    MOVE.W  (A4)+,A2
+    JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR DECODE_MOVEM_MASK_POST
     MOVE.B  #CR,(A1)+
@@ -678,30 +699,26 @@ DECODE_MOVEM_MASK_PRE_CHECK
     BRA DECODE_MOVEM_MASK_POST
     
 DECODE_MOVEM_MASK_PRE
-    MOVE.B  (A4)+,D2
-    JSR DECODE_MOVEM_MASK_AN_PRE
-    MOVE.B  #'/',(A1)+
-    MOVE.B  (A4)+,D2
+    MOVE.W  A2,D2
+    LSR     #8,D2
     JSR DECODE_MOVEM_MASK_DN_PRE
+    MOVE.W  A2,D2
+    LSL.W   #8,D2
+    LSR.W   #8,D2
+    JSR DECODE_MOVEM_MASK_AN_PRE
+    MOVE.B  #' ',-(A1)
     RTS
     
-DECODE_MOVEM_EA_CHECK
-    JSR GETSOURCEMODE
-    CMP.B #7,D7             ; Means we gotta grab data so we need to do that first
-    BEQ GRAB_MOVEM_DATA     ; Before we figure out the bitmask
-    JSR GETSOURCE           ; Otherwise just get the source
-    RTS                     ; then return
-    
-GRAB_MOVEM_DATA
-                ; gets the 16 bits for the register mask so we can grab the EA
-    RTS
-    
+
 DECODE_MOVEM_MASK_POST
-    MOVE.B  (A4)+,D2
+    MOVE.W  A2,D2
+    LSR     #8,D2
     JSR DECODE_MOVEM_MASK_AN_POST
-    MOVE.B  #'/',(A1)+    
-    MOVE.B  (A4)+,D2
+    MOVE.W  A2,D2
+    LSL.W   #8,D2
+    LSR.W   #8,D2
     JSR DECODE_MOVEM_MASK_DN_POST
+    MOVE.B  #' ',-(A1)
     RTS
     
 DECODE_MOVEM_MASK_AN_PRE
@@ -809,7 +826,7 @@ DECODE_MOVEM_MASK_PRE_DATA
     LSL.B       #7,D1
     LSR.B       #7,D1
     MOVE.B      #7,D0           ; For knowing what register this is
-    JSR DECODE_MOVEM_FINAL_VALUE      
+    JSR DECODE_MOVEM_FINAL_VALUE  
     RTS
     
 DECODE_MOVEM_FINAL_VALUE
@@ -817,19 +834,22 @@ DECODE_MOVEM_FINAL_VALUE
     BEQ     CHECK_PRINT_FINAL_VALUE
     CMP.B   #1,D4
     BEQ     PRINT_PREVIOUS_VALUE
+    CMP.B   #2,D4
+    BEQ     PRINT_ENDING_SPOT
     MOVE.B  #0,D4
+
     RTS
     
 CHECK_PRINT_FINAL_VALUE
     CMP.B   #0,D4
-    BEQ     PRINT_MOVEM_CHAR
+    BEQ     PRINT_MOVEM_CHAR_FINAL
     MOVE.B  #0,D4
     MOVE.B  #'-',(A1)+
     CMP.B   #1,D5
     BEQ     PRINT_MOVEM_AN
     CMP.B   #0,D5
     BEQ     PRINT_MOVEM_DN
-    
+  
     RTS    
 
 DECODE_MOVEM_VALUE
@@ -837,7 +857,8 @@ DECODE_MOVEM_VALUE
     BEQ CHECK_PRINT_VALUE   ; if so we need to check if we need to print it
     CMP.B   #1,D4
     BEQ     PRINT_PREVIOUS_VALUE
-    MOVE.B  #0,D4
+    CMP.B   #2,D4
+    BEQ     PRINT_ENDING_SPOT
     RTS                     ; if we don't then return
  
 
@@ -857,23 +878,36 @@ PRINT_PREVIOUS_VALUE
     BEQ     PRINT_MOVEM_AN
     CMP.B   #0,D5
     BEQ     PRINT_MOVEM_DN
-    
     RTS
     
 PRINT_MOVEM_CHAR 
-    MOVE.B  #1,D4
+    MOVE.B  #2,D4
     CMP.B   #1,D5
     BEQ     PRINT_MOVEM_AN
     CMP.B   #0,D5
     BEQ     PRINT_MOVEM_DN
-
     RTS
-   
+
+PRINT_MOVEM_CHAR_FINAL
+    MOVE.B  #0,D4
+    CMP.B   #1,D5
+    BEQ     PRINT_MOVEM_AN
+    CMP.B   #0,D5
+    BEQ     PRINT_MOVEM_DN
+    RTS
+ 
+PRINT_ENDING_SPOT
+    MOVE.B  #0,D4
+    MOVE.B  #'/',(A1)+
+    RTS
+
 PRINT_MOVEM_AN
     MOVE.B  #'A',(A1)+
     MOVE.B  D0,D7
     JSR     HEX_TO_CHAR
     MOVE.B  D7,(A1)+
+    CMP.B   #0,D4
+    BEQ     PRINT_ENDING_SPOT
     RTS
     
 PRINT_MOVEM_DN
@@ -881,6 +915,8 @@ PRINT_MOVEM_DN
     MOVE.B  D0,D7
     JSR     HEX_TO_CHAR
     MOVE.B  D7,(A1)+
+    CMP.B   #0,D4
+    BEQ     PRINT_ENDING_SPOT
     RTS
     
 DECODE_ADD_EA_DN_B
@@ -1393,12 +1429,14 @@ DECODE_BRA
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1415,12 +1453,14 @@ DECODE_BCC_HI
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1438,12 +1478,14 @@ DECODE_BCC_LS
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1461,12 +1503,14 @@ DECODE_BCC_CCHI
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1484,12 +1528,14 @@ DECODE_BCC_CCLO
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1507,12 +1553,14 @@ DECODE_BCC_NE
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1530,12 +1578,14 @@ DECODE_BCC_EQ
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1553,12 +1603,14 @@ DECODE_BCC_VC
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1576,12 +1628,14 @@ DECODE_BCC_VS
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1599,12 +1653,14 @@ DECODE_BCC_PL
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+   
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1622,12 +1678,14 @@ DECODE_BCC_MI
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1645,12 +1703,14 @@ DECODE_BCC_GE
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1668,12 +1728,14 @@ DECODE_BCC_LT
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1691,17 +1753,18 @@ DECODE_BCC_GT
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
-    
 DECODE_BCC_LE
     
     MOVE.L  #buffer,A1
@@ -1714,12 +1777,14 @@ DECODE_BCC_LE
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1727,7 +1792,8 @@ DECODE_BCC_LE
     
 DECODE_16_BIT_DISPLACEMENT
     MOVE.W  (A4)+,D1
-    JSR PUSH_EA_W
+    ADD.L   A4,D1
+    JSR PUSH_EA_L
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1735,6 +1801,7 @@ DECODE_16_BIT_DISPLACEMENT
 
 DECODE_32_BIT_DISPLACEMENT
     MOVE.L  (A4)+,D1
+    ADD.L   A4,D1    
     JSR PUSH_EA_L
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -2473,11 +2540,15 @@ GET_LONG_IMMEDIATE
     
 *data_error: D7 WORD couldn't be decoded, print it
 data_error
-    MOVE.L  #buffer,A1                      * Set A1 to point to the Test buffer
+    MOVE.L  #buffer,A1                      
     MOVE.B  #'D',(A1)+
     MOVE.B  #'A',(A1)+
     MOVE.B  #'T',(A1)+
     MOVE.B  #'A',(A1)+
+    MOVE.B  #' ',(A1)+
+    MOVE.B  #'$',(A1)+
+    MOVE.W  D3,D1
+    JSR     PUSH_EA_W
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR     PRINT
@@ -2814,10 +2885,12 @@ PUSH_EA_L
     JSR     HEX_TO_CHAR
     MOVE.B  D7,(A1)+
     JMP PUSH_EA_W
-
-
-
+ 
+        
 DONE
+    LEA     END_MSG,A1
+    MOVE.B  #14,D0
+    TRAP    #15
     SIMHALT
         
 * Put variables and constants here
@@ -2830,11 +2903,42 @@ BYTE_ERR            DC.B    'Incorrect byte size',CR,LF,0
 ODD_ERR             DC.B    'The address is odd',CR,LF,0
 INPUT_LONG_ERR      DC.B    'The address is longer than 8 bits',CR,LF,0
 INPUT_SHORT_ERR     DC.B    'The address must be longer than 0 bits',CR,LF,0
+ENTER               DC.B    CR,LF
+                    DC.B    'Please press Enter to continue',CR,LF,0
+START_MSG           DC.B    'This is the disassember made by Group 10 (Norman Hansen, Konstantin Stekhov)',CR,LF
+                    DC.B    'Input the starting and ending addresses and the program will run your data',CR,LF
+                    DC.B    'The starting and ending addresses must be between 7000 and FFFFFE',CR,LF
+                    DC.B    CR,LF,0                  
+END_MSG             DC.B    CR,LF
+                    DC.B    '     This is the end of our program',CR,LF
+
+                    DC.B    ' ooooooooooooooooooooooooooooooooooooo',CR,LF
+                    DC.B    ' 8                                .d88',CR,LF
+                    DC.B    ' 8  oooooooooooooooooooooooooooood8888',CR,LF
+                    DC.B    ' 8  8888888888888888888888888P"   8888    oooooooooooooooo',CR,LF
+                    DC.B    ' 8  8888888888888888888888P"      8888    8              8',CR,LF
+                    DC.B    ' 8  8888888888888888888P"         8888    8             d8',CR,LF
+                    DC.B    ' 8  8888888888888888P"            8888    8            d88',CR,LF
+                    DC.B    ' 8  8888888888888P"               8888    8           d888',CR,LF
+                    DC.B    ' 8  8888888888P"                  8888    8          d8888',CR,LF
+                    DC.B    ' 8  8888888P"                     8888    8         d88888',CR,LF
+                    DC.B    ' 8  8888P"                        8888    8        d888888',CR,LF
+                    DC.B    ' 8  8888oooooooooooooooooooooocgmm8888    8       d8888888',CR,LF
+                    DC.B    ' 8 .od88888888888888888888888888888888    8      d88888888',CR,LF
+                    DC.B    ' 8888888888888888888888888888888888888    8     d888888888',CR,LF
+                    DC.B    '                                          8    d8888888888',CR,LF
+                    DC.B    '    ooooooooooooooooooooooooooooooo       8   d88888888888',CR,LF
+                    DC.B    '   d                       ...oood8b      8  d888888888888',CR,LF
+                    DC.B    '  d              ...oood888888888888b     8 d8888888888888',CR,LF
+                    DC.B    ' d     ...oood88888888888888888888888b    8d88888888888888',CR,LF
+                    DC.B    'dood8888888888888888888888888888888888b',CR,LF,0
+
 START_ADDR          DS.B    80
 END_ADDR            DS.B    80
-BUFFER              DS.B    80   
-
-* MODE
+BUFFER              DS.B    80
+LINE_COUNTER        DS.B    1
+STUFF               DS.B    1
+                     
 
 MDRD      EQU     %000    *  Dn
 MARD      EQU     %001    *  An
@@ -2850,21 +2954,9 @@ MID       EQU     %111    * #<data>
 RAWA      EQU     %000    * (xxx).W
 RALA      EQU     %001    * (xxx).L
 RID       EQU     %100    * #<data>
- 
+                     
     END    START        ; last line of source
-   
-
-
-
-
-
-
-
-
-
-
-
-
+  
 
 *~Font name~Courier New~
 *~Font size~10~

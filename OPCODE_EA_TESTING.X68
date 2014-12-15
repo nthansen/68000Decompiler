@@ -14,7 +14,7 @@ START:                  ; first instruction of program
     LEA STACK, SP           *Get the stak pointer
     LEA $8000,A5
 
-    LEA $4000,A4
+    LEA $7000,A4
     JMP TEST
     
 
@@ -354,6 +354,7 @@ DECODE_MOVEM_REGTOMEM_W
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.W  (A4)+,A2
     JSR DECODE_MOVEM_MASK_PRE_CHECK
     MOVE.B #',',(A1)+
     JSR GETSOURCE
@@ -374,6 +375,7 @@ DECODE_MOVEM_REGTOMEM_L
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.W  (A4)+,A2    
     JSR DECODE_MOVEM_MASK_PRE_CHECK
     MOVE.B #',',(A1)+
     JSR GETSOURCE
@@ -394,7 +396,8 @@ DECODE_MOVEM_MEMTOREG_W
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
-    JSR DECODE_MOVEM_EA_CHECK
+    MOVE.W  (A4)+,A2
+    JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR DECODE_MOVEM_MASK_POST
     MOVE.B  #CR,(A1)+
@@ -414,7 +417,8 @@ DECODE_MOVEM_MEMTOREG_L
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
     
-    JSR DECODE_MOVEM_EA_CHECK
+    MOVE.W  (A4)+,A2
+    JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR DECODE_MOVEM_MASK_POST
     MOVE.B  #CR,(A1)+
@@ -429,30 +433,26 @@ DECODE_MOVEM_MASK_PRE_CHECK
     BRA DECODE_MOVEM_MASK_POST
     
 DECODE_MOVEM_MASK_PRE
-    MOVE.B  (A4)+,D2
-    JSR DECODE_MOVEM_MASK_AN_PRE
-    MOVE.B  #'/',(A1)+
-    MOVE.B  (A4)+,D2
+    MOVE.W  A2,D2
+    LSR     #8,D2
     JSR DECODE_MOVEM_MASK_DN_PRE
+    MOVE.W  A2,D2
+    LSL.W   #8,D2
+    LSR.W   #8,D2
+    JSR DECODE_MOVEM_MASK_AN_PRE
+    MOVE.B  #' ',-(A1)
     RTS
     
-DECODE_MOVEM_EA_CHECK
-    JSR GETSOURCEMODE
-    CMP.B #7,D7             ; Means we gotta grab data so we need to do that first
-    BEQ GRAB_MOVEM_DATA     ; Before we figure out the bitmask
-    JSR GETSOURCE           ; Otherwise just get the source
-    RTS                     ; then return
-    
-GRAB_MOVEM_DATA
-                ; gets the 16 bits for the register mask so we can grab the EA
-    RTS
-    
+
 DECODE_MOVEM_MASK_POST
-    MOVE.B  (A4)+,D2
+    MOVE.W  A2,D2
+    LSR     #8,D2
     JSR DECODE_MOVEM_MASK_AN_POST
-    MOVE.B  #'/',(A1)+    
-    MOVE.B  (A4)+,D2
+    MOVE.W  A2,D2
+    LSL.W   #8,D2
+    LSR.W   #8,D2
     JSR DECODE_MOVEM_MASK_DN_POST
+    MOVE.B  #' ',-(A1)
     RTS
     
 DECODE_MOVEM_MASK_AN_PRE
@@ -560,7 +560,7 @@ DECODE_MOVEM_MASK_PRE_DATA
     LSL.B       #7,D1
     LSR.B       #7,D1
     MOVE.B      #7,D0           ; For knowing what register this is
-    JSR DECODE_MOVEM_FINAL_VALUE      
+    JSR DECODE_MOVEM_FINAL_VALUE  
     RTS
     
 DECODE_MOVEM_FINAL_VALUE
@@ -568,19 +568,22 @@ DECODE_MOVEM_FINAL_VALUE
     BEQ     CHECK_PRINT_FINAL_VALUE
     CMP.B   #1,D4
     BEQ     PRINT_PREVIOUS_VALUE
+    CMP.B   #2,D4
+    BEQ     PRINT_ENDING_SPOT
     MOVE.B  #0,D4
+
     RTS
     
 CHECK_PRINT_FINAL_VALUE
     CMP.B   #0,D4
-    BEQ     PRINT_MOVEM_CHAR
+    BEQ     PRINT_MOVEM_CHAR_FINAL
     MOVE.B  #0,D4
     MOVE.B  #'-',(A1)+
     CMP.B   #1,D5
     BEQ     PRINT_MOVEM_AN
     CMP.B   #0,D5
     BEQ     PRINT_MOVEM_DN
-    
+  
     RTS    
 
 DECODE_MOVEM_VALUE
@@ -588,7 +591,8 @@ DECODE_MOVEM_VALUE
     BEQ CHECK_PRINT_VALUE   ; if so we need to check if we need to print it
     CMP.B   #1,D4
     BEQ     PRINT_PREVIOUS_VALUE
-    MOVE.B  #0,D4
+    CMP.B   #2,D4
+    BEQ     PRINT_ENDING_SPOT
     RTS                     ; if we don't then return
  
 
@@ -608,23 +612,36 @@ PRINT_PREVIOUS_VALUE
     BEQ     PRINT_MOVEM_AN
     CMP.B   #0,D5
     BEQ     PRINT_MOVEM_DN
-    
     RTS
     
 PRINT_MOVEM_CHAR 
-    MOVE.B  #1,D4
+    MOVE.B  #2,D4
     CMP.B   #1,D5
     BEQ     PRINT_MOVEM_AN
     CMP.B   #0,D5
     BEQ     PRINT_MOVEM_DN
-
     RTS
-   
+
+PRINT_MOVEM_CHAR_FINAL
+    MOVE.B  #0,D4
+    CMP.B   #1,D5
+    BEQ     PRINT_MOVEM_AN
+    CMP.B   #0,D5
+    BEQ     PRINT_MOVEM_DN
+    RTS
+ 
+PRINT_ENDING_SPOT
+    MOVE.B  #0,D4
+    MOVE.B  #'/',(A1)+
+    RTS
+
 PRINT_MOVEM_AN
     MOVE.B  #'A',(A1)+
     MOVE.B  D0,D7
     JSR     HEX_TO_CHAR
     MOVE.B  D7,(A1)+
+    CMP.B   #0,D4
+    BEQ     PRINT_ENDING_SPOT
     RTS
     
 PRINT_MOVEM_DN
@@ -632,6 +649,8 @@ PRINT_MOVEM_DN
     MOVE.B  D0,D7
     JSR     HEX_TO_CHAR
     MOVE.B  D7,(A1)+
+    CMP.B   #0,D4
+    BEQ     PRINT_ENDING_SPOT
     RTS
     
 DECODE_ADD_EA_DN_B
@@ -1144,12 +1163,14 @@ DECODE_BRA
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1166,12 +1187,14 @@ DECODE_BCC_HI
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1189,12 +1212,14 @@ DECODE_BCC_LS
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1212,12 +1237,14 @@ DECODE_BCC_CCHI
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1235,12 +1262,14 @@ DECODE_BCC_CCLO
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1258,12 +1287,14 @@ DECODE_BCC_NE
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1281,12 +1312,14 @@ DECODE_BCC_EQ
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1304,12 +1337,14 @@ DECODE_BCC_VC
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1327,12 +1362,14 @@ DECODE_BCC_VS
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1350,12 +1387,14 @@ DECODE_BCC_PL
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+   
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1373,12 +1412,14 @@ DECODE_BCC_MI
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1396,12 +1437,14 @@ DECODE_BCC_GE
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1419,12 +1462,14 @@ DECODE_BCC_LT
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1442,17 +1487,18 @@ DECODE_BCC_GT
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
-    
 DECODE_BCC_LE
     
     MOVE.L  #buffer,A1
@@ -1465,12 +1511,14 @@ DECODE_BCC_LE
     LSL     #8,D1
     LSR     #8,D1
 
-    MOVE.B  #'$',(A1)+
+    MOVE.B  #'#',(A1)+
     CMP.B   #$00,D1
     BEQ     DECODE_16_BIT_DISPLACEMENT
     CMP.B   #$FF,D1
     BEQ     DECODE_32_BIT_DISPLACEMENT
-    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+
+    ADD.L   A4,D1
+    JSR PUSH_EA_L   ; Push the first 8 bits in displacement
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1478,7 +1526,8 @@ DECODE_BCC_LE
     
 DECODE_16_BIT_DISPLACEMENT
     MOVE.W  (A4)+,D1
-    JSR PUSH_EA_W
+    ADD.L   A4,D1
+    JSR PUSH_EA_L
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -1486,6 +1535,7 @@ DECODE_16_BIT_DISPLACEMENT
 
 DECODE_32_BIT_DISPLACEMENT
     MOVE.L  (A4)+,D1
+    ADD.L   A4,D1    
     JSR PUSH_EA_L
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -2224,11 +2274,15 @@ GET_LONG_IMMEDIATE
     
 *data_error: D7 WORD couldn't be decoded, print it
 data_error
-    MOVE.L  #buffer,A1                      * Set A1 to point to the Test buffer
+    MOVE.L  #buffer,A1                      
     MOVE.B  #'D',(A1)+
     MOVE.B  #'A',(A1)+
     MOVE.B  #'T',(A1)+
     MOVE.B  #'A',(A1)+
+    MOVE.B  #' ',(A1)+
+    MOVE.B  #'$',(A1)+
+    MOVE.W  D3,D1
+    JSR     PUSH_EA_W
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR     PRINT
@@ -2571,9 +2625,6 @@ DONE
         
 * Put variables and constants here
 BUFFER              DS.B    80   
-
-MOVEM_post      DC.B	'A7','A6','A5','A4','A3','A2','A1','A0','D7','D6','D5','D4','D3','D2','D1','D0',0
-MOVEM_pre       DC.B    'D0','D1','D2','D3','D4','D5','D6','D7','A0','A1','A2','A3','A4','A5','A6','A7',0
 
 
 * MODE
