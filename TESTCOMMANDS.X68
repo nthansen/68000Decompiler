@@ -10,7 +10,40 @@ LONG    EQU $1234ABCD
     ORG    $4000
 START:                  ; first instruction of program
 
-
+    MOVEM.W     D1-D4/A1-A6,(A4)
+    MOVEM.W     D0-D7/A0-A7,(A4)
+    MOVEM.W     D2/D1/D5/A3/A1,(A6)
+    MOVEM.W     (A6),D2/D1/D5/A3/A1
+    MOVEM.L     A3/A1/D2/D1/D5,-(A6)
+    MOVEM.L     A6,(A2)
+    
+    BRA     START
+    BCC     START
+    BCS     START
+    BEQ     START
+    BGE     START
+    BGT     START
+    BHI     START
+    BLE     START
+    BLS     START
+    BLT     START
+    BMI     START
+    BNE     START
+    BPL     START
+    BVC     START
+    BVS     START
+    
+    MOVE.B      $AB,(A1)
+    MOVE.B      $ABFCAFD,(A1)
+   
+    
+    MOVEM.W     (A4),A3
+    MOVEM.L     (A2),A6
+    
+    SUBQ.B  #2,D4
+    SUBQ.W  #8,(A4)+
+    SUBQ.L  #1,-(A6)
+    
     NEG.B   D1
     NEG.W   D4
     NEG.L   D6
@@ -141,7 +174,7 @@ START:                  ; first instruction of program
     MULU.W  -(A0),D6
     
     DIVS.W  D1,D7
-    DIVS.W  (A3),D4
+    DIVS.W  #$0123,D4
     DIVS.W  (A5)+,D2
     DIVS.W  -(A0),D6
     
@@ -158,6 +191,30 @@ START:                  ; first instruction of program
     OR.W   (A2),D2
     OR.L   (A3),D3
 
+    CMP.B   (A1),D5
+    CMP.W   A4,D2
+    CMP.L   -(A4),D3
+
+    CMP.B   #$A1,D6
+    CMP.W   #$01B8,D1
+    CMP.L   #$BDE2F132,D4
+    
+    EOR.B   D1,D6
+    EOR.B   D4,(A1)
+    
+    EOR.W   D3,-(A3)
+    EOR.W   D2,(A2)+
+    
+    EOR.L   D3,D6
+    EOR.L   D1,(A6)
+    
+    SUB.B   (A1),D6
+    SUB.W    A4,D1
+    SUB.L   -(A7),D5
+    
+    SUB.B   D2,(A1)
+    SUB.W   D6,(A4)+
+    SUB.L   D1,-(A7)
 
     
     SIMHALT             ; halt simulator
@@ -165,6 +222,22 @@ START:                  ; first instruction of program
 * Put variables and constants here
 
     END    START        ; last line of source
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

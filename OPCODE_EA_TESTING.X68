@@ -94,6 +94,7 @@ DECODE_OPCODE
 DECODE_0      *ORI: DONE, CMPI:DONE , BCLEAR (DYNAMIC:DONE and STATIC:DONE)
     MOVE.L  D3,D1
     
+    ; FIX ORI
     LSL     #4,D1       Shift to be able to find out if it's ORI or CMPI
     LSR     #8,D1
     LSR     #4,D1
@@ -174,16 +175,59 @@ DECODE_4            *NOP: DONE, RTS:DONE, NEG:DONE, JSR:DONE, LEA:DONE, MOVEM
     JSR CHECK_LEA_OR_MOVEM      * Should make a check function to check for LEA and MOVEM 
     RTS
    
-DECODE_5    * SUBQ
-
+DECODE_5    * SUBQ: DONE
+    
+    JSR     GETDESTINATIONMODE
+    
+    CMP.B   #$4,D6
+    BEQ     DECODE_SUBQ_B
+    CMP.B   #$5,D6
+    BEQ     DECODE_SUBQ_W
+    CMP.B   #$6,D6
+    BEQ     DECODE_SUBQ_L
+    
     BRA     data_error
         
-DECODE_6    * Bcc, BRA
+DECODE_6    * Bcc: DONE, BRA: DONE
+	
+	MOVE.W  D3,D1
+	LSR     #8,D1
+	
+	CMP.B   #$60,D1
+	BEQ     DECODE_BRA
+	CMP.B   #$62,D1
+	BEQ     DECODE_BCC_HI
+	CMP.B   #$63,D1
+	BEQ     DECODE_BCC_LS
+	CMP.B   #$64,D1
+	BEQ     DECODE_BCC_CCHI
+	CMP.B   #$65,D1
+	BEQ     DECODE_BCC_CCLO
+	CMP.B   #$66,D1
+	BEQ     DECODE_BCC_NE
+	CMP.B   #$67,D1
+	BEQ     DECODE_BCC_EQ
+    CMP.B   #$68,D1
+    BEQ     DECODE_BCC_VC
+    CMP.B   #$69,D1
+    BEQ     DECODE_BCC_VS
+    CMP.B   #$6A,D1
+    BEQ    DECODE_BCC_PL
+    CMP.B   #$6B,D1
+    BEQ     DECODE_BCC_MI
+    CMP.B   #$6C,D1
+    BEQ     DECODE_BCC_GE
+    CMP.B   #$6D,D1
+    BEQ     DECODE_BCC_LT
+    CMP.B   #$6E,D1
+    BEQ     DECODE_BCC_GT
+    CMP.B   #$6F,D1
+    BEQ     DECODE_BCC_LE
 	
     BRA     data_error
         
           
-DECODE_8    * DIVU: DONE, DIVS: DONE,OR
+DECODE_8    * DIVU: DONE, DIVS: DONE, : DONE
     JSR     GETDESTINATIONMODE
     CMP.B   #0,D6
     BEQ     DECODE_OR_EA_DN_B
@@ -204,11 +248,41 @@ DECODE_8    * DIVU: DONE, DIVS: DONE,OR
     
     BRA     data_error
     
-DECODE_9    * SUB
+DECODE_9    * SUB: DONE
+    
+    JSR     GETDESTINATIONMODE
+    CMP.B   #0,D6
+    BEQ     DECODE_SUB_EA_DN_B
+    CMP.B   #1,D6
+    BEQ     DECODE_SUB_EA_DN_W
+    CMP.B   #2,D6
+    BEQ     DECODE_SUB_EA_DN_L
+    CMP.B   #4,D6
+    BEQ     DECODE_SUB_DN_EA_B
+    CMP.B   #5,D6
+    BEQ     DECODE_SUB_DN_EA_W
+    CMP.B   #6,D6
+    BEQ     DECODE_SUB_DN_EA_L
     
     BRA     data_error
 
-DECODE_B    * EOR,CMP
+DECODE_B    * EOR: DONE, CMP: DONE
+    
+    JSR     GETDESTINATIONMODE
+    
+    CMP.B   #0,D6
+    BEQ     DECODE_CMP_B
+    CMP.B   #1,D6
+    BEQ     DECODE_CMP_W
+    CMP.B   #2,D6
+    BEQ     DECODE_CMP_L
+    CMP.B   #4,D6
+    BEQ     DECODE_EOR_B
+    CMP.B   #5,D6
+    BEQ     DECODE_EOR_W
+    CMP.B   #6,D6
+    BEQ     DECODE_EOR_L
+    
     BRA     data_error
 
 
@@ -221,7 +295,7 @@ DECODE_C    * MULU: DONE MULS: DONE
     BRA     data_error
 
 
-DECODE_D    * ADD: DONE, ADDA
+DECODE_D    * ADD: DONE, ADDA: DONE
     JSR GETDESTINATIONMODE
     CMP.B   #0,D6
     BEQ     DECODE_ADD_EA_DN_B
@@ -245,6 +319,321 @@ DECODE_D    * ADD: DONE, ADDA
 DECODE_E    * LSL: DONE, LSR: DONE, ASL: DONE, ASR: DONE, ROL: DONE, ROR: DONE    
     BRA CHECK_TYPE_ROTATE
     
+
+DECODE_MOVEM_REGTOMEM
+    
+    JSR GETDESTINATIONMODE
+    
+    CMP.B   #2,D6
+    BEQ DECODE_MOVEM_REGTOMEM_W
+    CMP.B   #3,D6
+    BEQ DECODE_MOVEM_REGTOMEM_L
+    
+    BRA data_error
+    
+
+DECODE_MOVEM_MEMTOREG
+    JSR GETDESTINATIONMODE
+    
+    CMP.B   #2,D6
+    BEQ DECODE_MOVEM_MEMTOREG_W
+    CMP.B   #3,D6
+    BEQ DECODE_MOVEM_MEMTOREG_L
+    
+    BRA data_error
+    
+DECODE_MOVEM_REGTOMEM_W
+
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR DECODE_MOVEM_MASK_PRE_CHECK
+    MOVE.B #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_MOVEM_REGTOMEM_L
+
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR DECODE_MOVEM_MASK_PRE_CHECK
+    MOVE.B #',',(A1)+
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_MOVEM_MEMTOREG_W
+    
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR DECODE_MOVEM_EA_CHECK
+    MOVE.B #',',(A1)+
+    JSR DECODE_MOVEM_MASK_POST
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_MOVEM_MEMTOREG_L
+    
+    MOVE.L  #buffer,A1
+    MOVE.B #'M',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'V',(A1)+
+    MOVE.B #'E',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    
+    JSR DECODE_MOVEM_EA_CHECK
+    MOVE.B #',',(A1)+
+    JSR DECODE_MOVEM_MASK_POST
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_MOVEM_MASK_PRE_CHECK
+    JSR GETSOURCEMODE
+    CMP.B   #4,D6
+    BEQ DECODE_MOVEM_MASK_PRE
+    BRA DECODE_MOVEM_MASK_POST
+    
+DECODE_MOVEM_MASK_PRE
+    MOVE.B  (A4)+,D2
+    JSR DECODE_MOVEM_MASK_AN_PRE
+    MOVE.B  #'/',(A1)+
+    MOVE.B  (A4)+,D2
+    JSR DECODE_MOVEM_MASK_DN_PRE
+    RTS
+    
+DECODE_MOVEM_EA_CHECK
+    JSR GETSOURCEMODE
+    CMP.B #7,D7             ; Means we gotta grab data so we need to do that first
+    BEQ GRAB_MOVEM_DATA     ; Before we figure out the bitmask
+    JSR GETSOURCE           ; Otherwise just get the source
+    RTS                     ; then return
+    
+GRAB_MOVEM_DATA
+                ; gets the 16 bits for the register mask so we can grab the EA
+    RTS
+    
+DECODE_MOVEM_MASK_POST
+    MOVE.B  (A4)+,D2
+    JSR DECODE_MOVEM_MASK_AN_POST
+    MOVE.B  #'/',(A1)+    
+    MOVE.B  (A4)+,D2
+    JSR DECODE_MOVEM_MASK_DN_POST
+    RTS
+    
+DECODE_MOVEM_MASK_AN_PRE
+    CLR.L       D4
+    MOVE.B      #1,D5           ; to let the print know it's a An
+    BRA         DECODE_MOVEM_MASK_PRE_DATA
+
+    
+DECODE_MOVEM_MASK_AN_POST
+    CLR.L       D4
+    MOVE.B      #1,D5           ; to let the print know it's a An
+    BRA         DECODE_MOVEM_MASK_POST_DATA
+    RTS
+    
+DECODE_MOVEM_MASK_DN_PRE
+    CLR.L       D4
+    MOVE.B      #0,D5           ; to let the print know it's a Dn
+    BRA         DECODE_MOVEM_MASK_PRE_DATA
+    RTS
+
+DECODE_MOVEM_MASK_DN_POST
+    CLR.L       D4
+    MOVE.B      #0,D5           ; to let the print know it's a Dn
+    BRA         DECODE_MOVEM_MASK_POST_DATA
+    RTS
+
+DECODE_MOVEM_MASK_POST_DATA
+    MOVE.B      D2,D1
+    LSR         #7,D1           ; Shifting everything to the right 
+    MOVE.B      #7,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE
+    MOVE.B      D2,D1
+    LSL.B       #1,D1
+    LSR.B       #7,D1
+    MOVE.B      #6,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE 
+    MOVE.B      D2,D1   
+    LSL.B       #2,D1
+    LSR.B       #7,D1         
+    MOVE.B      #5,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1
+    LSL.B       #3,D1
+    LSR.B       #7,D1
+    MOVE.B      #4,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1    
+    LSL.B       #4,D1
+    LSR.B       #7,D1
+    MOVE.B      #3,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1     
+    LSL.B       #5,D1
+    LSR.B       #7,D1    
+    MOVE.B      #2,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE  
+    MOVE.B      D2,D1           
+    LSL.B       #6,D1
+    LSR.B       #7,D1    
+    MOVE.B      #1,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1       
+    LSL.B       #7,D1
+    LSR.B       #7,D1
+    MOVE.B      #0,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_FINAL_VALUE      
+    RTS
+
+DECODE_MOVEM_MASK_PRE_DATA
+    MOVE.B      D2,D1
+    LSR         #7,D1           ; Shifting everything to the right 
+    MOVE.B      #0,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE
+    MOVE.B      D2,D1
+    LSL.B       #1,D1
+    LSR.B       #7,D1
+    MOVE.B      #1,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE 
+    MOVE.B      D2,D1   
+    LSL.B       #2,D1
+    LSR.B       #7,D1         
+    MOVE.B      #2,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1
+    LSL.B       #3,D1
+    LSR.B       #7,D1
+    MOVE.B      #3,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1    
+    LSL.B       #4,D1
+    LSR.B       #7,D1
+    MOVE.B      #4,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE    
+    MOVE.B      D2,D1     
+    LSL.B       #5,D1
+    LSR.B       #7,D1    
+    MOVE.B      #5,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE        
+    MOVE.B      D2,D1     
+    LSL.B       #6,D1
+    LSR.B       #7,D1    
+    MOVE.B      #6,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_VALUE      
+    MOVE.B      D2,D1     
+    LSL.B       #7,D1
+    LSR.B       #7,D1
+    MOVE.B      #7,D0           ; For knowing what register this is
+    JSR DECODE_MOVEM_FINAL_VALUE      
+    RTS
+    
+DECODE_MOVEM_FINAL_VALUE
+    CMP.B   #1,D1
+    BEQ     CHECK_PRINT_FINAL_VALUE
+    CMP.B   #1,D4
+    BEQ     PRINT_PREVIOUS_VALUE
+    MOVE.B  #0,D4
+    RTS
+    
+CHECK_PRINT_FINAL_VALUE
+    CMP.B   #0,D4
+    BEQ     PRINT_MOVEM_CHAR
+    MOVE.B  #0,D4
+    MOVE.B  #'-',(A1)+
+    CMP.B   #1,D5
+    BEQ     PRINT_MOVEM_AN
+    CMP.B   #0,D5
+    BEQ     PRINT_MOVEM_DN
+    
+    RTS    
+
+DECODE_MOVEM_VALUE
+    CMP.B   #1,D1             ; Check if the register is used
+    BEQ CHECK_PRINT_VALUE   ; if so we need to check if we need to print it
+    CMP.B   #1,D4
+    BEQ     PRINT_PREVIOUS_VALUE
+    MOVE.B  #0,D4
+    RTS                     ; if we don't then return
+ 
+
+CHECK_PRINT_VALUE
+    CMP.B   #0,D4           ; We know nothing has been printed before so print
+    BEQ PRINT_MOVEM_CHAR
+    MOVE.B  D0,D6           ; Otherwise move to previous register so it can 
+                            ; be printed later on
+    MOVE.B  #1,D4                            
+    RTS
+    
+PRINT_PREVIOUS_VALUE
+    MOVE.B  #0,D4
+    MOVE.B  D6,D0
+    MOVE.B  #'-',(A1)+
+    CMP.B   #1,D5
+    BEQ     PRINT_MOVEM_AN
+    CMP.B   #0,D5
+    BEQ     PRINT_MOVEM_DN
+    
+    RTS
+    
+PRINT_MOVEM_CHAR 
+    MOVE.B  #1,D4
+    CMP.B   #1,D5
+    BEQ     PRINT_MOVEM_AN
+    CMP.B   #0,D5
+    BEQ     PRINT_MOVEM_DN
+
+    RTS
+   
+PRINT_MOVEM_AN
+    MOVE.B  #'A',(A1)+
+    MOVE.B  D0,D7
+    JSR     HEX_TO_CHAR
+    MOVE.B  D7,(A1)+
+    RTS
+    
+PRINT_MOVEM_DN
+    MOVE.B  #'D',(A1)+
+    MOVE.B  D0,D7
+    JSR     HEX_TO_CHAR
+    MOVE.B  D7,(A1)+
+    RTS
+    
 DECODE_ADD_EA_DN_B
     MOVE.L  #buffer,A1
     MOVE.B #'A',(A1)+
@@ -253,6 +642,7 @@ DECODE_ADD_EA_DN_B
     MOVE.B #'.',(A1)+
     MOVE.B #'B',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #0,D4
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -268,6 +658,7 @@ DECODE_ADD_EA_DN_W
     MOVE.B #'.',(A1)+
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #2,D4    
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -284,6 +675,7 @@ DECODE_ADD_EA_DN_L
     MOVE.B #'.',(A1)+
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #3,D4    
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -301,6 +693,7 @@ DECODE_ADDA_W
     MOVE.B #'.',(A1)+
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #2,D4    
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_ADDREG
@@ -319,6 +712,7 @@ DECODE_ADD_DN_EA_B
     MOVE.B #' ',(A1)+
     JSR GET_DESTINATION_DREG
     MOVE.B  #',',(A1)+
+    MOVE.B  #0,D4
     JSR GETSOURCE
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -335,6 +729,7 @@ DECODE_ADD_DN_EA_W
     MOVE.B #' ',(A1)+
     JSR GET_DESTINATION_DREG
     MOVE.B  #',',(A1)+
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -351,6 +746,7 @@ DECODE_ADD_DN_EA_L
     MOVE.B #' ',(A1)+
     JSR GET_DESTINATION_DREG
     MOVE.B  #',',(A1)+
+    MOVE.B  #3,D4
     JSR GETSOURCE
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -366,6 +762,7 @@ DECODE_ADDA_L
     MOVE.B #'.',(A1)+
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #3,D4
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_ADDREG
@@ -373,7 +770,109 @@ DECODE_ADDA_L
     MOVE.B  #LF,(A1)+
     JSR PRINT
     RTS
+    
+DECODE_CMP_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'C',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'P',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_CMP_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'C',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'P',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    MOVE.B  #2,D4
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_CMP_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'C',(A1)+
+    MOVE.B #'M',(A1)+
+    MOVE.B #'P',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    MOVE.B  #3,D4
+    JSR GETSOURCE
+    MOVE.B #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_EOR_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'E',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B #',',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_EOR_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'E',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B #',',(A1)+
+    MOVE.B  #2,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
 
+DECODE_EOR_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'E',(A1)+
+    MOVE.B #'O',(A1)+
+    MOVE.B #'R',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B #',',(A1)+
+    MOVE.B  #3,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+   
 DECODE_OR_EA_DN_B
     MOVE.L  #buffer,A1
     MOVE.B #'O',(A1)+
@@ -381,6 +880,7 @@ DECODE_OR_EA_DN_B
     MOVE.B #'.',(A1)+
     MOVE.B #'B',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #0,D4
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -396,6 +896,7 @@ DECODE_OR_EA_DN_W
     MOVE.B #'.',(A1)+
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -411,6 +912,7 @@ DECODE_OR_EA_DN_L
     MOVE.B #'.',(A1)+
     MOVE.B #'L',(A1)+
     MOVE.B #' ',(A1)+
+    MOVE.B  #3,D4
     JSR GETSOURCE
     MOVE.B  #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -428,6 +930,7 @@ DECODE_OR_DN_EA_B
     MOVE.B #' ',(A1)+
     JSR GET_DESTINATION_DREG
     MOVE.B  #',',(A1)+
+    MOVE.B  #0,D4
     JSR GETSOURCE
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -443,6 +946,7 @@ DECODE_OR_DN_EA_W
     MOVE.B #' ',(A1)+
     JSR GET_DESTINATION_DREG
     MOVE.B  #',',(A1)+
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
@@ -458,7 +962,531 @@ DECODE_OR_DN_EA_L
     MOVE.B #' ',(A1)+
     JSR GET_DESTINATION_DREG
     MOVE.B  #',',(A1)+
+    MOVE.B  #3,D4
     JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_SUBQ_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'Q',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+ 
+    
+    JSR GET_COUNT
+    MOVE.B #',',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_SUBQ_W
+
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'Q',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+ 
+    
+    JSR GET_COUNT
+    MOVE.B #',',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_SUBQ_L
+
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'Q',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+ 
+    
+    JSR GET_COUNT
+    MOVE.B #',',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_SUB_EA_DN_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_SUB_EA_DN_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    MOVE.B  #2,D4
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_SUB_EA_DN_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    MOVE.B  #3,D4
+    JSR GETSOURCE
+    MOVE.B  #',',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_SUB_DN_EA_B
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+    
+DECODE_SUB_DN_EA_W
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'W',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    MOVE.B  #0,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+    
+DECODE_SUB_DN_EA_L
+    MOVE.L  #buffer,A1
+    MOVE.B #'S',(A1)+
+    MOVE.B #'U',(A1)+
+    MOVE.B #'B',(A1)+
+    MOVE.B #'.',(A1)+
+    MOVE.B #'L',(A1)+
+    MOVE.B #' ',(A1)+
+    JSR GET_DESTINATION_DREG
+    MOVE.B  #',',(A1)+
+    MOVE.B  #3,D4
+    JSR GETSOURCE
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BRA
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'R',(A1)+
+    MOVE.B  #'A',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_HI
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'H',(A1)+
+    MOVE.B  #'I',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_LS
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #'S',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_CCHI
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_CCLO
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #'S',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_NE
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'N',(A1)+
+    MOVE.B  #'E',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_EQ
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'E',(A1)+
+    MOVE.B  #'Q',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_VC
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'V',(A1)+
+    MOVE.B  #'C',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_VS
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'V',(A1)+
+    MOVE.B  #'S',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_PL
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'P',(A1)+
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_MI
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'M',(A1)+
+    MOVE.B  #'I',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_GE
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'G',(A1)+
+    MOVE.B  #'E',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_LT
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #'T',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_GT
+
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'G',(A1)+
+    MOVE.B  #'T',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_BCC_LE
+    
+    MOVE.L  #buffer,A1
+    MOVE.B  #'B',(A1)+
+    MOVE.B  #'L',(A1)+
+    MOVE.B  #'E',(A1)+
+    MOVE.B  #' ',(A1)+
+
+    MOVE.W  D3,D1
+    LSL     #8,D1
+    LSR     #8,D1
+
+    MOVE.B  #'$',(A1)+
+    CMP.B   #$00,D1
+    BEQ     DECODE_16_BIT_DISPLACEMENT
+    CMP.B   #$FF,D1
+    BEQ     DECODE_32_BIT_DISPLACEMENT
+    JSR PUSH_EA_B   ; Push the first 8 bits in displacement
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+    
+DECODE_16_BIT_DISPLACEMENT
+    MOVE.W  (A4)+,D1
+    JSR PUSH_EA_W
+    MOVE.B  #CR,(A1)+
+    MOVE.B  #LF,(A1)+
+    JSR PRINT
+    RTS
+
+DECODE_32_BIT_DISPLACEMENT
+    MOVE.L  (A4)+,D1
+    JSR PUSH_EA_L
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
@@ -835,8 +1863,14 @@ CHECK_LEA_OR_MOVEM
     LSR     #8,D1
     LSR     #5,D1
     
-    CMP.B   #%111,D1
+    CMP.B   #7,D1
     BEQ     DECODE_LEA
+    
+    JSR     GETDESTINATIONREG
+    CMP.B   #4,D7
+    BEQ     DECODE_MOVEM_REGTOMEM
+    CMP.B   #6,D7
+    BEQ     DECODE_MOVEM_MEMTOREG
     
     BRA     data_error
     
@@ -850,6 +1884,7 @@ DECODE_DIVU
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -868,6 +1903,7 @@ DECODE_DIVS
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -886,6 +1922,7 @@ DECODE_MULU
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -904,6 +1941,7 @@ DECODE_MULS
     MOVE.B #'W',(A1)+
     MOVE.B #' ',(A1)+
     
+    MOVE.B  #2,D4
     JSR GETSOURCE
     MOVE.B #',',(A1)+
     JSR GET_DESTINATION_DREG
@@ -1145,7 +2183,7 @@ GET_SIZE
     CMP.B   #%10,D1
     BEQ     GET_LONG
     
-    RTS
+    BRA data_error
     
     
 GET_BYTE
@@ -1373,7 +2411,6 @@ PRINT_EA_AWA_REG:
     MOVE.B  #')',(A1)+
     MOVE.B  #'.',(A1)+
     MOVE.B  #'W',(A1)+
-    MOVE.B  #' ',(A1)+
 
     RTS
 
@@ -1435,12 +2472,6 @@ PRINT_EA_ARIM
     MOVE.B #'-',(A1)+
     MOVE.B #'(',(A1)+
     MOVE.B #'A',(A1)+
-    RTS
-    
-PRINT_EA_ID
-    LEA ID_TEXT,A1
-    MOVE.B #14,D0
-    TRAP #15
     RTS
     
 PUSH_EA_B
@@ -1544,19 +2575,6 @@ BUFFER              DS.B    80
 MOVEM_post      DC.B	'A7','A6','A5','A4','A3','A2','A1','A0','D7','D6','D5','D4','D3','D2','D1','D0',0
 MOVEM_pre       DC.B    'D0','D1','D2','D3','D4','D5','D6','D7','A0','A1','A2','A3','A4','A5','A6','A7',0
 
- 
-DRD_TEXT DC.B ' D', 0
-ARD_TEXT DC.B ' A',0
-ARI_TEXT DC.B ' (A',0
-ARIP_TEXT DC.B ' (A',0
-ARIM_TEXT DC.B ' -(A',0
-ID_TEXT DC.B ' #<',0
-ID_END_TEXT DC.B '>',0
-ARI_END_TEXT DC.B ') ',0
-ARIP_END_TEXT DC.B ')+ ',0
-ALA_TEXT DC.B ' (',0
-AWA_TEXT DC.B ' (',0
-ALA_END_TEXT DC.B ').L',0
 
 * MODE
 
@@ -1577,6 +2595,13 @@ RID       EQU     %100    * #<data>
 
 
     END    START        ; last line of source
+
+
+
+
+
+
+
 
 
 
