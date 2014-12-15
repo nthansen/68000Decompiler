@@ -10,12 +10,16 @@ LF      EQU $0A
 BYTE    EQU $1
 STACK   EQU $7000               * Stack address
 BEGIN   EQU $00007000
+MAX     EQU 25
 END     EQU $00FFFFFE   
     
     ORG    $1000
 START:                  ; first instruction of program
-        LEA     STACK, SP           *Get the stak pointer
-        
+        LEA     STACK,SP            *Get the stak pointer
+        MOVE.B  #0,LINE_COUNTER     *Line counter for displaying part of output
+        LEA     START_MSG,A1
+        MOVE.B  #14,D0
+        TRAP    #15
         JSR     GET_START_ADDR
         JSR     CLEAR_ALL
         
@@ -26,9 +30,22 @@ START:                  ; first instruction of program
 DATA_LOOP
         CMP.L   A4,A5
         BEQ     DONE
-        MOVE.W (A4)+,D3 
-        JSR PRINT_CURRENT_ADDR   
-        BRA DATA_LOOP  
+        MOVE.W  (A4)+,D3 
+        JSR     PRINT_CURRENT_ADDR
+        ADD.B   #1,LINE_COUNTER
+        CMP.B   #MAX,LINE_COUNTER
+        BEQ     ASK_ENTER    
+        BRA     DATA_LOOP  
+
+ASK_ENTER
+        MOVE.B  #0,LINE_COUNTER
+        LEA     ENTER, A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        LEA     STUFF,A1
+        MOVE.B  #2,D0
+        TRAP    #15
+        BRA     DATA_LOOP
 
 PRINT           
         MOVE.B  #$00,(A1)                 * Terminate the string
@@ -36,16 +53,6 @@ PRINT
         MOVE.B  #13,D0                    * Load task number 14 for printing
         LEA     buffer,A1                 * Load the buffer into A1 
         TRAP    #15                       * Print the buffer              
-        RTS
-
-*TEST FOR PRINT SUBROUTINE
-DISPLAY_COMMAND 
-        CLR.L   D2
-        *MOVE.L  #buffer,A1
-        *MOVE.B  #'D',(A1)+
-        *MOVE.B  #'A',(A1)+
-        *MOVE.B  #' ',(A1)+  
-        *BRA     PRINT
         RTS
 
 PRINT_CURRENT_ADDR
@@ -143,16 +150,16 @@ PRINT_CURRENT_ADDR
         RTS
 
 HEX_TO_CHAR                                                                                                   
-        CMP.B   #$9,D7                    *Check if digit                            
-        BLE     DIG_TO_ASCII              *Convert digit                 
-        BRA     LET_TO_ASCII              *Convert letter
+        CMP.B   #$9,D7           *Check if digit                            
+        BLE     DIG_TO_ASCII     *Convert digit                 
+        BRA     LET_TO_ASCII     *Convert letter
                                                                                                     
 DIG_TO_ASCII                                                                                               
-        ADDI.b  #$30,D7                                                                  
+        ADDI.B  #$30,D7          *Converting a digit to ASCII                                                                  
         RTS
                                                                                                               
 LET_TO_ASCII                                                                                            
-        ADDI.B  #$37,D7                                                                   
+        ADDI.B  #$37,D7          *Converting a letter to ASCII                                                         
         RTS
         
 GET_START_ADDR
@@ -195,7 +202,8 @@ GET_ENDING_ADDR
         MOVE.L  D3,A5
         
         JSR     CLEAR_ALL
-        JSR     DATA_LOOP        
+        JSR     DATA_LOOP
+               
         RTS
 
 CONVERT_ONE_CHAR_TO_HEX
@@ -307,6 +315,9 @@ CLEAR_ALL               *This function clears all of the data registers
         RTS  
         
 DONE
+    LEA     END_MSG,A1
+    MOVE.B  #14,D0
+    TRAP    #15
     SIMHALT
         
 * Put variables and constants here
@@ -319,11 +330,48 @@ BYTE_ERR            DC.B    'Incorrect byte size',CR,LF,0
 ODD_ERR             DC.B    'The address is odd',CR,LF,0
 INPUT_LONG_ERR      DC.B    'The address is longer than 8 bits',CR,LF,0
 INPUT_SHORT_ERR     DC.B    'The address must be longer than 0 bits',CR,LF,0
+ENTER               DC.B    CR,LF
+                    DC.B    'Please press Enter to continue',CR,LF,0
+START_MSG           DC.B    'This is the disassember made by Group 10 (Norman Hansen, Konstantin Stekhov)',CR,LF
+                    DC.B    'Input the starting and ending addresses and the program will run your data',CR,LF
+                    DC.B    'The starting and ending addresses must be between 7000 and FFFFFE',CR,LF
+                    DC.B    CR,LF,0                  
+END_MSG             DC.B    CR,LF
+                    DC.B    'This is the end of our program',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;  ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;  ;;;;;;;;;;        ;;;;      ;;;;;;;;;  ;;;;;;     ;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;; ;;;;;;;;;  ;  ;;;  ;;  ;;;  ;;;;;;;  ;; ;;;;  ;;;  ;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;  ;;;;;;;;;  ;;         ;;;;  ;;;;;;;  ;;;  ;;  ;;;  ;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;         ;;;;;  ;;;;;  ;;;;;;;;;  ;;;;;  ;;;;;         ;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;  ;;  ;;  ;;; ;;  ;;;;  ;;;;;;;;;;  ;;;  ;;;;;;;;;  ;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;     ;;;     ;;;       ;;;;;;;;;;;     ;;;;;;;;;;;       ;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   ;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;    ;;;;;;    ;;;     ;;;;;   ;;;;;;;;   ;;;;;;    ;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;  ;;;;;    ;;;  ;;    ;; ;;;  ;;;;;;  ;;;;;;;   ;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;  ;;;;;  ; ;;;    ;; ;  ;;;;;  ;;;;;  ;;;;;;   ;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;  ;;;;  ;; ;; ; ;;;; ;;;;;;;;  ;;;; ; ;; ;;;  ;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;     ;;;    ;;     ;;;;;;;;;;      ;;   ;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;;;;;;;    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  ;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;  ;;;;;;  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF
+                    DC.B    ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;',CR,LF,0
+
 START_ADDR          DS.B    80
 END_ADDR            DS.B    80
-BUFFER              DS.B    80    
+BUFFER              DS.B    80
+LINE_COUNTER        DS.B    1
+STUFF               DS.B    1
+                     
     END    START        ; last line of source
    
+
+
 
 
 
