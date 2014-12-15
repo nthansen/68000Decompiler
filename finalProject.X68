@@ -934,6 +934,7 @@ DECODE_ADD_EA_DN_B
     MOVE.B  #CR,(A1)+
     MOVE.B  #LF,(A1)+
     JSR PRINT
+    RTS
 
 DECODE_ADD_EA_DN_W
     MOVE.L  #buffer,A1
@@ -2910,7 +2911,7 @@ START_MSG           DC.B    'This is the disassember made by Group 10 (Norman Ha
                     DC.B    'The starting and ending addresses must be between 7000 and FFFFFE',CR,LF
                     DC.B    CR,LF,0                  
 END_MSG             DC.B    CR,LF
-                    DC.B    '     This is the end of our program',CR,LF
+                    DC.B    '    This is the end of our program',CR,LF
 
                     DC.B    ' ooooooooooooooooooooooooooooooooooooo',CR,LF
                     DC.B    ' 8                                .d88',CR,LF
@@ -2957,6 +2958,7 @@ RID       EQU     %100    * #<data>
                      
     END    START        ; last line of source
   
+
 
 *~Font name~Courier New~
 *~Font size~10~
